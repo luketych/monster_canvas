@@ -1,88 +1,83 @@
 # Monster Canvas VSCode Extension
 
-A VS Code extension that displays a canvas where Unicode characters and shapes can be dragged around and selected from palettes.
+A VS Code extension that displays a canvas where images can be dragged around.
+
+## Development with Dev Containers
+
+This project is configured to use VS Code Dev Containers, which provides a consistent development environment across different machines.
+
+### Prerequisites
+
+To develop this extension using Dev Containers, you need:
+
+1. [Visual Studio Code](https://code.visualstudio.com/)
+2. [Docker](https://www.docker.com/products/docker-desktop)
+3. [VS Code Remote - Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+### Getting Started
+
+1. Clone this repository
+2. Open the project in VS Code
+3. When prompted, click "Reopen in Container" or run the "Remote-Containers: Reopen in Container" command from the Command Palette (F1)
+4. VS Code will build the Docker container and open the project inside it
+5. Once the container is running, you can develop, debug, and test the extension as usual
+
+### Running the Extension
+
+To run the extension in development mode:
+
+1. Press F5 or select "Run and Debug" from the Activity Bar
+2. A new VS Code window will open with the extension loaded
+3. Use the "Monster Canvas: Open Canvas" command from the Command Palette to open the canvas
+
+### Adding Additional Extensions
+
+To add more extensions to the development container:
+
+1. Open `.devcontainer/devcontainer.json`
+2. Add the extension ID to the `extensions` array under `customizations.vscode`
+3. Rebuild the container using the "Remote-Containers: Rebuild Container" command
+
+### Running Alongside Other Extensions
+
+The Dev Container setup allows you to run this extension alongside other extensions. To do this:
+
+1. Make sure the extension you want to run alongside Monster Canvas is installed in your local VS Code
+2. Add the extension ID to the `extensions` array in `.devcontainer/devcontainer.json`
+3. Rebuild the container
+4. When you run the extension in debug mode, both extensions will be available in the Extension Development Host
+
+### Customizing the Dev Container
+
+You can customize the Dev Container environment by:
+
+1. Modifying the `Dockerfile` to install additional system dependencies
+2. Updating `docker-compose.yml` to add services or configure environment variables
+3. Editing `.devcontainer/devcontainer.json` to configure VS Code settings and extensions
 
 ## Features
 
-- Drag and drop Unicode characters on a canvas
-- Add and resize shapes (circle, triangle, square)
-- Select characters from a categorized Unicode character palette
-- Select shapes from a shape palette
-- Save and restore character positions and shapes
-- Reset positions to default
-- Reset shapes to default
+- Display a canvas with draggable characters and shapes
+- Add new characters from a palette of Unicode characters
+- Add shapes (circles, squares, triangles)
+- Save and reset positions
 
-## Project Structure
+## Structure
 
-The project is organized into a modular structure for better maintainability:
+The extension is organized as follows:
 
-```
-src/
-├── extension.js            # Main entry point for the extension
-├── utils/
-│   ├── constants.js        # Default data, shape types, and Unicode characters
-│   └── storage.js          # Storage utility functions
-├── webview/
-│   ├── webviewContent.js   # HTML/CSS/JS content generation
-│   └── webviewProvider.js  # Webview panel management
-```
+- `src/extension.js`: Main extension entry point
+- `src/webview/`: Webview-related code
+  - `src/webview/html/`: HTML templates
+  - `src/webview/styles/`: CSS styles
+  - `src/webview/js/`: JavaScript code
+- `src/utils/`: Utility functions and constants
 
-### Module Responsibilities
+## Development Tasks
 
-#### extension.js
-- Registers the extension command
-- Creates the webview provider
-- Handles extension activation/deactivation
+The following npm scripts are available:
 
-#### utils/constants.js
-- Defines default character data
-- Defines default shapes data
-- Defines shape types (circle, square, triangle)
-- Contains Unicode character sets for the palette
-
-#### utils/storage.js
-- Handles loading and saving character data
-- Handles loading and saving shape data
-- Provides utility functions for data management
-
-#### webview/webviewContent.js
-- Generates the HTML content for the webview
-- Defines CSS styles for the UI
-- Provides JavaScript for the canvas functionality
-- Implements shape drawing and resizing
-
-#### webview/webviewProvider.js
-- Manages the webview panel lifecycle
-- Handles messages from the webview
-- Coordinates between the webview and extension storage
-
-## Usage
-
-1. Press `F5` to run the extension in a new VS Code window
-2. Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
-3. Run the command "Monster Canvas: Open Canvas"
-4. Use the character palette to select Unicode characters
-5. Click on the canvas to place selected characters
-6. Drag characters to move them around
-7. Select a shape from the shape palette to add shapes
-8. Drag shapes to move them around
-9. Use the resize handle (bottom-right corner) to resize shapes
-10. Use the buttons to save positions, reset positions, or reset shapes
-
-## Development
-
-### Building and Running
-
-1. Clone the repository
-2. Run `npm install` to install dependencies
-3. Press `F5` to launch the extension in debug mode
-
-### Making Changes
-
-- Modify the files in the `src` directory
-- The extension will automatically reload when changes are made (in debug mode)
-- Use the VS Code debugger to debug the extension
-
-## License
-
-This project is licensed under the MIT License.
+- `npm run lint`: Run ESLint to check code quality
+- `npm run test`: Run tests
+- `npm run package`: Package the extension into a VSIX file
+- `npm run publish`: Publish the extension to the VS Code Marketplace

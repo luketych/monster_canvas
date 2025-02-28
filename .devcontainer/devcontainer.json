@@ -1,0 +1,42 @@
+{
+  "name": "Monster Canvas Extension Development",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "node",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-pull-request-github",
+        "ms-vscode.js-debug",
+        "esbenp.prettier-vscode",
+        "visualstudioexptteam.vscodeintellicode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash"
+          }
+        },
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "javascript.updateImportsOnFileMove.enabled": "always"
+      }
+    }
+  },
+  "forwardPorts": [],
+  "postCreateCommand": "npm install",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "none"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  }
+}

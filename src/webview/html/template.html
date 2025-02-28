@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monster CAnvas Canvas</title>
+  <!-- CSS will be injected here -->
+  {{styles}}
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Monster Characters Canvas</h1>
+      <p>Click and drag characters or shapes to move them around the canvas. Select a shape type to add new shapes.</p>
+    </div>
+    <div class="canvas-container">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div id="characterPalette" class="character-palette">
+      <!-- Unicode characters will be populated here -->
+    </div>
+
+    <div id="shapePalette" class="shape-palette">
+      <div class="palette-section-title">Shapes</div>
+      <div class="shape-buttons">
+        <!-- Shape buttons will be populated here -->
+      </div>
+    </div>
+
+    <div class="controls-section">
+      <div class="controls">
+        <button id="saveBtn">Save Positions</button>
+        <button id="resetBtn">Reset Positions</button>
+        <button id="resetShapesBtn">Reset Shapes</button>
+      </div>
+      <div class="mode-controls">
+        <button id="dragModeBtn" class="active-mode">Drag Mode</button>
+        <button id="togglePaletteBtn">Hide Character Palette</button>
+        <button id="toggleShapePaletteBtn">Hide Shape Palette</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript will be injected here -->
+  {{scripts}}
+</body>
+
+</html>
