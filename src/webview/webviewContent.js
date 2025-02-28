@@ -51,6 +51,21 @@ function getWebviewContent(characterData, shapes, defaultCharacterData, defaultS
       const vscode = acquireVsCodeApi();
     </script>
     <script>
+      ${utilsJs}
+    </script>
+    <script>
+      ${canvasJs}
+    </script>
+    <script>
+      ${eventsJs}
+    </script>
+    <script>
+      ${uiJs}
+    </script>
+    <script>
+      ${explorerJs}
+    </script>
+    <script>
       ${mainJs}
     </script>
     <script>

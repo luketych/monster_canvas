@@ -2,9 +2,7 @@
  * UI-related functionality
  */
 
-// Note: utils functions are available as global objects
-
-// State variables for UI
+// UI state
 let isPaletteVisible = true;
 let isShapePaletteVisible = true;
 let selectedCharacter = null;
@@ -22,11 +20,28 @@ function initUI() {
   document.getElementById('dragModeBtn').addEventListener('click', handleDragModeButtonClick);
   document.getElementById('togglePaletteBtn').addEventListener('click', handleTogglePaletteButtonClick);
   document.getElementById('toggleShapePaletteBtn').addEventListener('click', handleToggleShapePaletteButtonClick);
-  document.getElementById('toggleFileExplorerBtn').addEventListener('click', explorer.handleToggleFileExplorerButtonClick);
+  document.getElementById('toggleFileExplorerBtn').addEventListener('click', handleToggleFileExplorerButtonClick);
 
   // Initialize palettes
   populateCharacterPalette();
   populateShapePalette();
+}
+
+/**
+ * Initializes the sidebar
+ */
+function initSidebar() {
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebar = document.getElementById('sidebar');
+  const mainContent = document.getElementById('mainContent');
+
+  sidebarToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+
+    // Update toggle button text
+    sidebarToggle.textContent = sidebar.classList.contains('collapsed') ? '≫' : '≡';
+  });
 }
 
 /**
@@ -44,7 +59,7 @@ function handleSaveButtonClick() {
  */
 function handleResetButtonClick() {
   characters = JSON.parse(JSON.stringify(defaultCharacterData));
-  canvas.drawCanvas();
+  drawCanvas();
 
   vscode.postMessage({
     command: 'resetPositions'
@@ -56,7 +71,7 @@ function handleResetButtonClick() {
  */
 function handleResetShapesButtonClick() {
   shapes = JSON.parse(JSON.stringify(defaultShapesData));
-  canvas.drawCanvas();
+  drawCanvas();
 
   vscode.postMessage({
     command: 'resetShapes'
@@ -100,6 +115,30 @@ function handleToggleShapePaletteButtonClick() {
   } else {
     palette.classList.add('hidden');
     document.getElementById('toggleShapePaletteBtn').textContent = 'Show Shapes';
+  }
+}
+
+/**
+ * Handles toggle file explorer button click
+ */
+function handleToggleFileExplorerButtonClick() {
+  const fileExplorer = document.getElementById('fileExplorer');
+  isFileExplorerVisible = !isFileExplorerVisible;
+
+  console.log('Toggle file explorer:', isFileExplorerVisible);
+
+  if (isFileExplorerVisible) {
+    fileExplorer.classList.remove('hidden');
+    document.getElementById('toggleFileExplorerBtn').textContent = 'Hide Files';
+
+    // Request updated workspace files
+    console.log('Requesting workspace files');
+    vscode.postMessage({
+      command: 'getWorkspaceFiles'
+    });
+  } else {
+    fileExplorer.classList.add('hidden');
+    document.getElementById('toggleFileExplorerBtn').textContent = 'Show Files';
   }
 }
 
@@ -179,13 +218,3 @@ function deselectAllShapeButtons() {
   document.querySelectorAll('.shape-button').forEach(el => el.classList.remove('selected'));
   selectedShapeType = null;
 }
-
-// Expose functions and variables as global objects
-window.ui = {
-  initUI,
-  currentMode,
-  selectedCharacter,
-  selectedShapeType,
-  deselectAllPaletteCharacters,
-  deselectAllShapeButtons
-};
