@@ -4,19 +4,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monster CAnvas Canvas</title>
+  <title>Monster Canvas</title>
   <!-- CSS will be injected here -->
   {{styles}}
 </head>
 
 <body>
-  <div class="container">
+  <!-- Sidebar for palettes and file explorer -->
+  <div id="sidebar" class="sidebar">
+    <button id="sidebarToggle" class="sidebar-toggle">≡</button>
+
     <div class="header">
-      <h1>Monster Characters Canvas</h1>
-      <p>Click and drag characters or shapes to move them around the canvas. Select a shape type to add new shapes.</p>
-    </div>
-    <div class="canvas-container">
-      <canvas id="canvas"></canvas>
+      <h1>Monster Canvas</h1>
+      <p>Click and drag characters or shapes to move them around the canvas.</p>
     </div>
 
     <div id="characterPalette" class="character-palette">
@@ -30,6 +30,13 @@
       </div>
     </div>
 
+    <div id="fileExplorer" class="file-explorer hidden">
+      <div class="palette-section-title">Workspace Files</div>
+      <div id="fileTree" class="file-tree">
+        <!-- File tree will be populated here -->
+      </div>
+    </div>
+
     <div class="controls-section">
       <div class="controls">
         <button id="saveBtn">Save Positions</button>
@@ -38,9 +45,17 @@
       </div>
       <div class="mode-controls">
         <button id="dragModeBtn" class="active-mode">Drag Mode</button>
-        <button id="togglePaletteBtn">Hide Character Palette</button>
-        <button id="toggleShapePaletteBtn">Hide Shape Palette</button>
+        <button id="togglePaletteBtn">Hide Characters</button>
+        <button id="toggleShapePaletteBtn">Hide Shapes</button>
+        <button id="toggleFileExplorerBtn">Show Files</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Main content area with canvas -->
+  <div id="mainContent" class="main-content">
+    <div class="canvas-container">
+      <canvas id="canvas"></canvas>
     </div>
   </div>
 

@@ -3,6 +3,7 @@
  */
 const vscode = require('vscode');
 const path = require('path');
+const fs = require('fs');
 const { getWebviewContent } = require('./webviewContent');
 const {
   loadCharacterData,
@@ -57,13 +58,17 @@ class monsterCanvasWebviewProvider {
     const characterData = loadCharacterData(this.context, defaultCharacterData);
     const shapes = loadShapeData(this.context, defaultShapes);
 
+    // Get workspace files and folders
+    const workspaceFiles = this.getWorkspaceFiles();
+
     // Set the webview's HTML content
     this.panel.webview.html = getWebviewContent(
       characterData,
       shapes,
       JSON.stringify(defaultCharacterData),
       JSON.stringify(defaultShapes),
-      JSON.stringify(shapeTypes)
+      JSON.stringify(shapeTypes),
+      JSON.stringify(workspaceFiles)
     );
 
     // Set up message handling
@@ -91,6 +96,9 @@ class monsterCanvasWebviewProvider {
             return;
           case 'resetShapes':
             this.handleResetShapes();
+            return;
+          case 'getWorkspaceFiles':
+            this.handleGetWorkspaceFiles();
             return;
         }
       },
@@ -164,6 +172,93 @@ class monsterCanvasWebviewProvider {
     }
 
     this.panel = null;
+  }
+
+  /**
+   * Gets the workspace files and folders
+   * @returns {Array} Array of file and folder objects
+   */
+  getWorkspaceFiles() {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (!workspaceFolders) {
+      console.log('No workspace folders found');
+      return [];
+    }
+
+    const rootPath = workspaceFolders[0].uri.fsPath;
+    console.log('Root path:', rootPath);
+    const files = this.getFilesAndFoldersInDirectory(rootPath, '');
+    console.log('Workspace files:', files.length);
+    return files;
+  }
+
+  /**
+   * Gets files and folders in a directory recursively
+   * @param {string} directoryPath - The directory path
+   * @param {string} relativePath - The relative path from the workspace root
+   * @returns {Array} Array of file and folder objects
+   */
+  getFilesAndFoldersInDirectory(directoryPath, relativePath) {
+    console.log('Reading directory:', directoryPath);
+    const result = [];
+
+    try {
+      const items = fs.readdirSync(directoryPath, { withFileTypes: true });
+      console.log('Found', items.length, 'items in directory');
+
+      for (const item of items) {
+        const itemPath = path.join(directoryPath, item.name);
+        const itemRelativePath = path.join(relativePath, item.name);
+
+        if (item.isDirectory()) {
+          // Skip node_modules and .git directories
+          if (item.name === 'node_modules' || item.name === '.git') {
+            console.log('Skipping directory:', item.name);
+            continue;
+          }
+
+          console.log('Processing directory:', item.name);
+          try {
+            const children = this.getFilesAndFoldersInDirectory(itemPath, itemRelativePath);
+            result.push({
+              name: item.name,
+              path: itemRelativePath,
+              type: 'folder',
+              children: children
+            });
+          } catch (err) {
+            console.error('Error processing directory', item.name, ':', err.message);
+          }
+        } else {
+          console.log('Processing file:', item.name);
+          result.push({
+            name: item.name,
+            path: itemRelativePath,
+            type: 'file',
+            extension: path.extname(item.name)
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error reading directory', directoryPath, ':', err.message);
+      // Return an empty array instead of throwing an error
+      return [];
+    }
+
+    return result;
+  }
+
+  /**
+   * Handles getting workspace files
+   */
+  handleGetWorkspaceFiles() {
+    console.log('Handling getWorkspaceFiles command');
+    const workspaceFiles = this.getWorkspaceFiles();
+    console.log('Sending workspace files to webview:', workspaceFiles.length);
+    this.panel.webview.postMessage({
+      command: 'updateWorkspaceFiles',
+      data: workspaceFiles
+    });
   }
 }
 

@@ -21,9 +21,10 @@ function readFile(filePath) {
  * @param {string} defaultCharacterData - JSON string of default character data for reset functionality
  * @param {string} defaultShapesData - JSON string of default shapes data for reset functionality
  * @param {string} shapeTypesData - JSON string of available shape types
+ * @param {string} workspaceFiles - JSON string of workspace files and folders
  * @returns {string} HTML content
  */
-function getWebviewContent(characterData, shapes, defaultCharacterData, defaultShapesData, shapeTypesData) {
+function getWebviewContent(characterData, shapes, defaultCharacterData, defaultShapesData, shapeTypesData, workspaceFiles) {
   // Read the HTML template
   let htmlTemplate = readFile('./html/template.html');
 
@@ -46,15 +47,16 @@ function getWebviewContent(characterData, shapes, defaultCharacterData, defaultS
     unicodeCharacters = ${JSON.stringify(unicodeCharacters)};
     defaultCharacterData = ${defaultCharacterData};
     defaultShapesData = ${defaultShapesData};
+    workspaceFiles = ${workspaceFiles || '[]'};
+    
+    // Acquire the VS Code API once at the top level
+    const vscode = acquireVsCodeApi();
       
-      // Initialize the webview when the DOM is loaded
-      document.addEventListener('DOMContentLoaded', function() {
-        // Acquire the VS Code API
-        const vscode = acquireVsCodeApi();
-        
-        // Initialize the webview
-        init(characters, shapes, shapeTypes, unicodeCharacters, defaultCharacterData, defaultShapesData);
-      });
+    // Initialize the webview when the DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize the webview
+      init(characters, shapes, shapeTypes, unicodeCharacters, defaultCharacterData, defaultShapesData, workspaceFiles);
+    });
     </script>
   `;
 

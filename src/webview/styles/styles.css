@@ -3,12 +3,61 @@ body {
   padding: 20px;
   background-color: #f3f3f3;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #000000;
+  /* Make text black for better readability */
 }
 
 .container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+}
+
+/* Sidebar layout */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 300px;
+  background-color: #f3f3f3;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+  z-index: 100;
+  padding: 20px;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar.collapsed {
+  transform: translateX(-280px);
+}
+
+.sidebar-toggle {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background-color: #007acc;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 101;
+}
+
+.main-content {
+  margin-left: 320px;
+  transition: margin-left 0.3s ease;
+  flex: 1;
+}
+
+.main-content.expanded {
+  margin-left: 40px;
 }
 
 .canvas-container {
@@ -44,7 +93,8 @@ canvas {
 }
 
 .character-palette,
-.shape-palette {
+.shape-palette,
+.file-explorer {
   padding: 15px;
   background-color: white;
   border: 1px solid #ccc;
@@ -55,6 +105,8 @@ canvas {
   max-height: 250px;
   overflow-y: auto;
   margin-bottom: 20px;
+  color: #000000;
+  /* Make text black for better readability */
 }
 
 .shape-buttons {
@@ -75,8 +127,72 @@ canvas {
 }
 
 .character-palette.hidden,
-.shape-palette.hidden {
+.shape-palette.hidden,
+.file-explorer.hidden {
   display: none;
+}
+
+.file-explorer {
+  padding: 15px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  max-height: 250px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  color: #000000;
+  /* Make text black for better readability */
+}
+
+.file-tree {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #000000;
+  /* Make text black for better readability */
+}
+
+.file-tree-item {
+  padding: 4px 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.file-tree-item:hover {
+  background-color: #f0f0f0;
+}
+
+.file-tree-item.dragging {
+  opacity: 0.5;
+}
+
+.file-tree-folder {
+  font-weight: bold;
+  color: #007acc;
+}
+
+.file-tree-file {
+  color: #000000;
+  /* Make text black for better readability */
+}
+
+.file-tree-toggle {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  text-align: center;
+  line-height: 16px;
+  margin-right: 5px;
+  cursor: pointer;
+}
+
+.file-tree-children {
+  padding-left: 20px;
+}
+
+.file-tree-icon {
+  margin-right: 5px;
+  font-size: 16px;
 }
 
 .palette-character {
@@ -120,7 +236,8 @@ button {
   text-align: center;
   margin: 10px 0;
   font-weight: bold;
-  color: #555;
+  color: #000000;
+  /* Make text black for better readability */
   border-bottom: 1px solid #eee;
   padding-bottom: 5px;
 }
