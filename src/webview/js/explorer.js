@@ -6,6 +6,7 @@
 let isFileExplorerVisible = false;
 let selectedFile = null;
 let workspaceFiles = [];
+let usedFiles = new Set(); // Track files that have been added to the canvas
 
 /**
  * Populates the file explorer with workspace files
@@ -53,7 +54,7 @@ function createFileTreeItem(item) {
     contentElement.appendChild(toggleElement);
 
     // Make the entire content element clickable for toggling the folder
-    contentElement.addEventListener('click', (e) => {
+    const toggleFolder = (e) => {
       const childrenElement = itemElement.querySelector('.file-tree-children');
       if (childrenElement.classList.contains('hidden')) {
         childrenElement.classList.remove('hidden');
@@ -62,7 +63,9 @@ function createFileTreeItem(item) {
         childrenElement.classList.add('hidden');
         toggleElement.textContent = '▶';
       }
-    });
+    };
+
+    contentElement.addEventListener('click', toggleFolder);
 
     const iconElement = document.createElement('span');
     iconElement.className = 'file-tree-icon file-tree-folder';
@@ -102,21 +105,70 @@ function createFileTreeItem(item) {
     itemElement.appendChild(contentElement);
   }
 
-  // Make the content element draggable
-  contentElement.draggable = true;
-  contentElement.addEventListener('dragstart', (e) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify({
-      path: item.path,
-      name: item.name,
-      type: item.type
-    }));
-    contentElement.classList.add('dragging');
-    selectedFile = item;
-  });
+  // Check if this file is already on the canvas
+  const isUsed = usedFiles.has(item.path);
 
-  contentElement.addEventListener('dragend', () => {
-    contentElement.classList.remove('dragging');
-  });
+  // Add greyed out style if the file/folder is already on the canvas
+  if (isUsed) {
+    contentElement.classList.add('used-file');
+
+    // Add click handler to flash the location on the canvas, but only for files
+    // For folders, we'll modify the existing click handler
+    if (item.type !== 'folder') {
+      contentElement.addEventListener('click', () => {
+        // Find the character on the canvas with this file path
+        const character = characters.find(char =>
+          char.metadata && char.metadata.path === item.path
+        );
+
+        if (character) {
+          flashCharacterOnCanvas(character);
+        }
+      });
+    } else {
+      // For folders, replace the click handler to both toggle and flash
+      contentElement.removeEventListener('click', toggleFolder);
+      contentElement.addEventListener('click', (e) => {
+        // First toggle the folder
+        const childrenElement = itemElement.querySelector('.file-tree-children');
+        if (childrenElement.classList.contains('hidden')) {
+          childrenElement.classList.remove('hidden');
+          itemElement.querySelector('.file-tree-toggle').textContent = '▼';
+        } else {
+          childrenElement.classList.add('hidden');
+          itemElement.querySelector('.file-tree-toggle').textContent = '▶';
+        }
+
+        // Then flash the folder on the canvas
+        const character = characters.find(char =>
+          char.metadata && char.metadata.path === item.path
+        );
+
+        if (character) {
+          flashCharacterOnCanvas(character);
+        }
+      });
+    }
+  }
+
+  // Make the content element draggable only if it's not already used
+  contentElement.draggable = !isUsed;
+
+  if (contentElement.draggable) {
+    contentElement.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', JSON.stringify({
+        path: item.path,
+        name: item.name,
+        type: item.type
+      }));
+      contentElement.classList.add('dragging');
+      selectedFile = item;
+    });
+
+    contentElement.addEventListener('dragend', () => {
+      contentElement.classList.remove('dragging');
+    });
+  }
 
   return itemElement;
 }

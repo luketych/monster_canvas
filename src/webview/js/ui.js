@@ -7,7 +7,7 @@ let isPaletteVisible = true;
 let isShapePaletteVisible = true;
 let selectedCharacter = null;
 let selectedShapeType = null;
-let currentMode = 'drag';
+let currentMode = 'drag'; // 'drag' or 'delete'
 
 /**
  * Initializes UI elements and event handlers
@@ -18,6 +18,7 @@ function initUI() {
   document.getElementById('resetBtn').addEventListener('click', handleResetButtonClick);
   document.getElementById('resetShapesBtn').addEventListener('click', handleResetShapesButtonClick);
   document.getElementById('dragModeBtn').addEventListener('click', handleDragModeButtonClick);
+  document.getElementById('deleteModeBtn').addEventListener('click', handleDeleteModeButtonClick);
   document.getElementById('togglePaletteBtn').addEventListener('click', handleTogglePaletteButtonClick);
   document.getElementById('toggleShapePaletteBtn').addEventListener('click', handleToggleShapePaletteButtonClick);
   document.getElementById('toggleFileExplorerBtn').addEventListener('click', handleToggleFileExplorerButtonClick);
@@ -84,6 +85,24 @@ function handleResetShapesButtonClick() {
 function handleDragModeButtonClick() {
   currentMode = 'drag';
   document.getElementById('dragModeBtn').classList.add('active-mode');
+  document.getElementById('deleteModeBtn').classList.remove('active-mode');
+  canvas.style.cursor = 'default';
+}
+
+/**
+ * Handles delete mode button click
+ */
+function handleDeleteModeButtonClick() {
+  currentMode = 'delete';
+  document.getElementById('deleteModeBtn').classList.add('active-mode');
+  document.getElementById('dragModeBtn').classList.remove('active-mode');
+
+  // Deselect any selected characters or shapes
+  deselectAllPaletteCharacters();
+  deselectAllShapeButtons();
+
+  // Change cursor to indicate delete mode
+  canvas.style.cursor = 'not-allowed';
 }
 
 /**
@@ -218,3 +237,4 @@ function deselectAllShapeButtons() {
   document.querySelectorAll('.shape-button').forEach(el => el.classList.remove('selected'));
   selectedShapeType = null;
 }
+

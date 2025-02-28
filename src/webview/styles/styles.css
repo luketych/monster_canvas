@@ -178,6 +178,22 @@ canvas {
   opacity: 0.5;
 }
 
+.file-tree-content.used-file {
+  opacity: 0.5;
+  color: #888;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+}
+
+.file-tree-content.used-file::after {
+  content: "✓";
+  position: absolute;
+  right: 10px;
+  color: #007acc;
+  font-weight: bold;
+}
+
 .file-tree-folder {
   font-weight: bold;
   color: #007acc;

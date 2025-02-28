@@ -77,6 +77,13 @@ function drawCharacter(char) {
   ctx.textBaseline = 'middle';
   ctx.fillText(char.character, char.x, char.y);
 
+  // Draw the file/folder name underneath if it exists
+  if (char.metadata && char.metadata.name) {
+    ctx.font = (char.size / 3) + 'px Arial';
+    ctx.fillStyle = '#333333';
+    ctx.fillText(char.metadata.name, char.x, char.y + char.size / 2 + 15);
+  }
+
   if (draggedCharacter === char) {
     const metrics = ctx.measureText(char.character);
     const height = char.size;
@@ -148,3 +155,97 @@ function drawResizeHandle(shape) {
   ctx.stroke();
   ctx.restore();
 }
+
+/**
+ * Flashes a character on the canvas to highlight its location
+ * @param {Object} character - The character to flash
+ */
+function flashCharacterOnCanvas(character) {
+  // Store the original color
+  const originalColor = character.color;
+
+  // Flash sequence: highlight -> original -> highlight -> original
+  const flashSequence = [
+    { color: '#FF5733', duration: 200 },  // Bright orange-red
+    { color: originalColor, duration: 200 },
+    { color: '#FF5733', duration: 200 },
+    { color: originalColor, duration: 200 }
+  ];
+
+  // Execute the flash sequence
+  let timeElapsed = 0;
+  flashSequence.forEach((flash, index) => {
+    setTimeout(() => {
+      character.color = flash.color;
+      drawCanvas();
+    }, timeElapsed);
+    timeElapsed += flash.duration;
+  });
+
+  // Scroll to the character's position
+  const canvasContainer = document.querySelector('.canvas-container');
+  if (canvasContainer) {
+    // Calculate the position to scroll to (center the character in the viewport)
+    const scrollX = Math.max(0, character.x - canvasContainer.clientWidth / 2);
+    const scrollY = Math.max(0, character.y - canvasContainer.clientHeight / 2);
+
+    // Smooth scroll to the character
+    canvasContainer.scrollTo({
+      left: scrollX,
+      top: scrollY,
+      behavior: 'smooth'
+    });
+  }
+}
+
+// Expose functions and variables as global objects
+window.canvas = {
+  initCanvas,
+  drawCanvas,
+  isPointInShape,
+  isPointNearResizeHandle,
+  flashCharacterOnCanvas,
+  get canvas() { return canvas; },
+  get ctx() { return ctx; },
+  draggedCharacter: null,
+  draggedShape: null,
+  resizingShape: null,
+  updateCursor: function (mouseX, mouseY) {
+    // This function will be called from handleCanvasMouseMove
+    // to update the cursor based on the current mode and what's under the cursor
+
+    // If in delete mode, show delete cursor when over an item
+    if (currentMode === 'delete') {
+      // Check for shapes
+      for (let i = shapes.length - 1; i >= 0; i--) {
+        if (isPointInShape(mouseX, mouseY, shapes[i])) {
+          canvas.style.cursor = 'not-allowed';
+          return true;
+        }
+      }
+
+      // Check for characters
+      for (let i = characters.length - 1; i >= 0; i--) {
+        const char = characters[i];
+        ctx.font = char.size + 'px Arial';
+        const metrics = ctx.measureText(char.character);
+        const width = metrics.width;
+        const height = char.size;
+
+        if (mouseX >= char.x - width / 2 - 5 &&
+          mouseX <= char.x + width / 2 + 5 &&
+          mouseY >= char.y - height / 2 - 5 &&
+          mouseY <= char.y + height / 2 + 5) {
+          canvas.style.cursor = 'not-allowed';
+          return true;
+        }
+      }
+
+      // Not over any item, but still in delete mode
+      canvas.style.cursor = 'default';
+      return true;
+    }
+
+    return false; // Not in delete mode, let the regular cursor logic handle it
+  }
+};

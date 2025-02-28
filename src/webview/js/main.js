@@ -32,6 +32,14 @@ function init(initialCharacters, initialShapes, initialShapeTypes, initialUnicod
   defaultShapesData = initialDefaultShapesData;
   workspaceFiles = initialWorkspaceFiles || [];
 
+  // Initialize usedFiles set with any existing files on the canvas
+  usedFiles = new Set();
+  characters.forEach(char => {
+    if (char.metadata && char.metadata.path && char.metadata.type === 'file') {
+      usedFiles.add(char.metadata.path);
+    }
+  });
+
   console.log('Initializing with workspace files:', initialWorkspaceFiles);
   console.log('Workspace files length:', workspaceFiles.length);
 
