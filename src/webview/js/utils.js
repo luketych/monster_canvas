@@ -15,7 +15,7 @@ function getRandomColor() {
   return colors[Math.floor(Math.random() * colors.length)];
 }
 
-// Export functions
-module.exports = {
+// Expose functions as global objects
+window.utils = {
   getRandomColor
 };

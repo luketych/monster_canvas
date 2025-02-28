@@ -64,8 +64,8 @@ body {
   flex: 1;
   position: relative;
   min-height: 300px;
-  max-height: 60vh;
-  margin-bottom: 20px;
+  height: 90vh;
+  margin: 20px;
 }
 
 canvas {
@@ -137,11 +137,13 @@ canvas {
   background-color: white;
   border: 1px solid #ccc;
   border-radius: 6px;
-  max-height: 250px;
+  max-height: 400px;
   overflow-y: auto;
   margin-bottom: 20px;
   color: #000000;
   /* Make text black for better readability */
+  width: 100%;
+  display: block;
 }
 
 .file-tree {
@@ -149,20 +151,30 @@ canvas {
   font-size: 14px;
   color: #000000;
   /* Make text black for better readability */
+  width: 100%;
 }
 
 .file-tree-item {
-  padding: 4px 0;
-  cursor: pointer;
+  padding: 6px 0;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.file-tree-item:hover {
+.file-tree-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.file-tree-content:hover {
   background-color: #f0f0f0;
 }
 
-.file-tree-item.dragging {
+.file-tree-content.dragging {
   opacity: 0.5;
 }
 
@@ -188,6 +200,13 @@ canvas {
 
 .file-tree-children {
   padding-left: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-tree-children.hidden {
+  display: none;
 }
 
 .file-tree-icon {

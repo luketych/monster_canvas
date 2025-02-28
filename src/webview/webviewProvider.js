@@ -59,7 +59,7 @@ class monsterCanvasWebviewProvider {
     const shapes = loadShapeData(this.context, defaultShapes);
 
     // Get workspace files and folders
-    const workspaceFiles = this.getWorkspaceFiles();
+    let workspaceFiles = this.getWorkspaceFiles();
 
     // Set the webview's HTML content
     this.panel.webview.html = getWebviewContent(
@@ -253,7 +253,7 @@ class monsterCanvasWebviewProvider {
    */
   handleGetWorkspaceFiles() {
     console.log('Handling getWorkspaceFiles command');
-    const workspaceFiles = this.getWorkspaceFiles();
+    workspaceFiles = this.getWorkspaceFiles();
     console.log('Sending workspace files to webview:', workspaceFiles.length);
     this.panel.webview.postMessage({
       command: 'updateWorkspaceFiles',

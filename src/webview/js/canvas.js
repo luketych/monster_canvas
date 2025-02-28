@@ -3,27 +3,26 @@
  */
 
 // Canvas and context
-let canvas;
-let ctx;
+let canvasElement;
+let canvasContext;
 
 // State variables for canvas interaction
 let draggedCharacter = null;
 let draggedShape = null;
 let resizingShape = null;
-let offsetX, offsetY;
 
 /**
  * Initializes the canvas
  */
 function initCanvas() {
-  canvas = document.getElementById("canvas");
-  ctx = canvas.getContext("2d");
+  canvasElement = document.getElementById("canvas");
+  canvasContext = canvasElement.getContext("2d");
 
   // Set up event listeners
-  canvas.addEventListener("mousedown", handleCanvasMouseDown);
-  canvas.addEventListener("mousemove", handleCanvasMouseMove);
-  canvas.addEventListener("mouseup", handleCanvasMouseUp);
-  canvas.addEventListener("mouseleave", handleCanvasMouseLeave);
+  canvasElement.addEventListener("mousedown", events.handleCanvasMouseDown);
+  canvasElement.addEventListener("mousemove", events.handleCanvasMouseMove);
+  canvasElement.addEventListener("mouseup", events.handleCanvasMouseUp);
+  canvasElement.addEventListener("mouseleave", events.handleCanvasMouseLeave);
 
   // Set canvas size
   resizeCanvas();
@@ -38,8 +37,8 @@ function initCanvas() {
  */
 function resizeCanvas() {
   const container = document.querySelector('.canvas-container');
-  canvas.width = container.clientWidth;
-  canvas.height = container.clientHeight;
+  canvasElement.width = container.clientWidth;
+  canvasElement.height = container.clientHeight;
   drawCanvas();
 }
 
@@ -47,7 +46,7 @@ function resizeCanvas() {
  * Draws all elements on the canvas
  */
 function drawCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
   // Draw shapes
   shapes.forEach(shape => {
@@ -68,27 +67,27 @@ function drawCanvas() {
  * @param {Object} char - The character object to draw
  */
 function drawCharacter(char) {
-  ctx.save();
-  ctx.font = char.size + 'px Arial';
-  ctx.fillStyle = char.color;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(char.character, char.x, char.y);
+  canvasContext.save();
+  canvasContext.font = char.size + 'px Arial';
+  canvasContext.fillStyle = char.color;
+  canvasContext.textAlign = 'center';
+  canvasContext.textBaseline = 'middle';
+  canvasContext.fillText(char.character, char.x, char.y);
 
   if (draggedCharacter === char) {
-    const metrics = ctx.measureText(char.character);
+    const metrics = canvasContext.measureText(char.character);
     const height = char.size;
     const width = metrics.width;
-    ctx.strokeStyle = '#007acc';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(
+    canvasContext.strokeStyle = '#007acc';
+    canvasContext.lineWidth = 2;
+    canvasContext.strokeRect(
       char.x - width / 2 - 5,
       char.y - height / 2 - 5,
       width + 10,
       height + 10
     );
   }
-  ctx.restore();
+  canvasContext.restore();
 }
 
 /**
@@ -96,36 +95,36 @@ function drawCharacter(char) {
  * @param {Object} shape - The shape object to draw
  */
 function drawShape(shape) {
-  ctx.save();
-  ctx.fillStyle = shape.color;
+  canvasContext.save();
+  canvasContext.fillStyle = shape.color;
 
   switch (shape.type) {
     case 'circle':
-      ctx.beginPath();
+      canvasContext.beginPath();
       const radius = Math.min(shape.width, shape.height) / 2;
-      ctx.arc(shape.x + shape.width / 2, shape.y + shape.height / 2, radius, 0, Math.PI * 2);
-      ctx.fill();
+      canvasContext.arc(shape.x + shape.width / 2, shape.y + shape.height / 2, radius, 0, Math.PI * 2);
+      canvasContext.fill();
       break;
     case 'square':
-      ctx.fillRect(shape.x, shape.y, shape.width, shape.height);
+      canvasContext.fillRect(shape.x, shape.y, shape.width, shape.height);
       break;
     case 'triangle':
-      ctx.beginPath();
-      ctx.moveTo(shape.x + shape.width / 2, shape.y);
-      ctx.lineTo(shape.x + shape.width, shape.y + shape.height);
-      ctx.lineTo(shape.x, shape.y + shape.height);
-      ctx.closePath();
-      ctx.fill();
+      canvasContext.beginPath();
+      canvasContext.moveTo(shape.x + shape.width / 2, shape.y);
+      canvasContext.lineTo(shape.x + shape.width, shape.y + shape.height);
+      canvasContext.lineTo(shape.x, shape.y + shape.height);
+      canvasContext.closePath();
+      canvasContext.fill();
       break;
   }
 
   if (draggedShape === shape || resizingShape === shape) {
-    ctx.strokeStyle = '#007acc';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
+    canvasContext.strokeStyle = '#007acc';
+    canvasContext.lineWidth = 2;
+    canvasContext.strokeRect(shape.x, shape.y, shape.width, shape.height);
   }
 
-  ctx.restore();
+  canvasContext.restore();
 }
 
 /**
@@ -136,15 +135,15 @@ function drawResizeHandle(shape) {
   const handleX = shape.x + shape.width;
   const handleY = shape.y + shape.height;
 
-  ctx.save();
-  ctx.fillStyle = '#007acc';
-  ctx.strokeStyle = 'white';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(handleX, handleY, 5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
+  canvasContext.save();
+  canvasContext.fillStyle = '#007acc';
+  canvasContext.strokeStyle = 'white';
+  canvasContext.lineWidth = 2;
+  canvasContext.beginPath();
+  canvasContext.arc(handleX, handleY, 5, 0, Math.PI * 2);
+  canvasContext.fill();
+  canvasContext.stroke();
+  canvasContext.restore();
 }
 
 /**
@@ -197,12 +196,15 @@ function isPointNearResizeHandle(x, y, shape) {
   return distance <= 10;
 }
 
-// Export functions
-module.exports = {
+// Expose functions and variables as global objects
+window.canvas = {
   initCanvas,
   drawCanvas,
   isPointInShape,
   isPointNearResizeHandle,
-  canvas,
-  ctx
+  get canvas() { return canvasElement; },
+  get ctx() { return canvasContext; },
+  draggedCharacter: null,
+  draggedShape: null,
+  resizingShape: null
 };

@@ -31,41 +31,44 @@ function getWebviewContent(characterData, shapes, defaultCharacterData, defaultS
   // Read the CSS
   const styles = readFile('./styles/styles.css');
 
-  // Read the JavaScript file
+  // Read the JavaScript files
+  const utilsJs = readFile('./js/utils.js');
+  const canvasJs = readFile('./js/canvas.js');
+  const eventsJs = readFile('./js/events.js');
+  const uiJs = readFile('./js/ui.js');
+  const explorerJs = readFile('./js/explorer.js');
   const mainJs = readFile('./js/main.js');
 
   // Inject the CSS into the HTML template
   htmlTemplate = htmlTemplate.replace('{{styles}}', `<style>\n${styles}\n</style>`);
 
-  // Create the initialization script
-  const initScript = `
-    <script>
-    // Initialize data
-    characters = ${JSON.stringify(characterData)};
-    shapes = ${JSON.stringify(shapes)};
-    shapeTypes = ${shapeTypesData};
-    unicodeCharacters = ${JSON.stringify(unicodeCharacters)};
-    defaultCharacterData = ${defaultCharacterData};
-    defaultShapesData = ${defaultShapesData};
-    workspaceFiles = ${workspaceFiles || '[]'};
-    
-    // Acquire the VS Code API once at the top level
-    const vscode = acquireVsCodeApi();
-      
-    // Initialize the webview when the DOM is loaded
-    document.addEventListener('DOMContentLoaded', function() {
-      // Initialize the webview
-      init(characters, shapes, shapeTypes, unicodeCharacters, defaultCharacterData, defaultShapesData, workspaceFiles);
-    });
-    </script>
-  `;
+  // We don't need a separate initialization script anymore
 
   // Combine JavaScript and inject into the HTML template
   const combinedJs = `
     <script>
+      // Acquire the VS Code API once at the top level
+      const vscode = acquireVsCodeApi();
+    </script>
+    <script>
       ${mainJs}
     </script>
-    ${initScript}
+    <script>
+      // Initialize the webview when the DOM is loaded
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded, initializing webview');
+        // Initialize the webview with the data
+        init(
+          ${JSON.stringify(characterData)},
+          ${JSON.stringify(shapes)},
+          ${shapeTypesData},
+          ${JSON.stringify(unicodeCharacters)},
+          ${defaultCharacterData},
+          ${defaultShapesData},
+          ${workspaceFiles || '[]'}
+        );
+      });
+    </script>
   `;
 
   htmlTemplate = htmlTemplate.replace('{{scripts}}', combinedJs);

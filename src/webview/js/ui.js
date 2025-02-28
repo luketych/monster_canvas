@@ -2,8 +2,7 @@
  * UI-related functionality
  */
 
-// Import utilities
-const { getRandomColor } = require('./utils');
+// Note: utils functions are available as global objects
 
 // State variables for UI
 let isPaletteVisible = true;
@@ -23,6 +22,7 @@ function initUI() {
   document.getElementById('dragModeBtn').addEventListener('click', handleDragModeButtonClick);
   document.getElementById('togglePaletteBtn').addEventListener('click', handleTogglePaletteButtonClick);
   document.getElementById('toggleShapePaletteBtn').addEventListener('click', handleToggleShapePaletteButtonClick);
+  document.getElementById('toggleFileExplorerBtn').addEventListener('click', explorer.handleToggleFileExplorerButtonClick);
 
   // Initialize palettes
   populateCharacterPalette();
@@ -33,7 +33,6 @@ function initUI() {
  * Handles save button click
  */
 function handleSaveButtonClick() {
-  const vscode = acquireVsCodeApi();
   vscode.postMessage({
     command: 'saveCoordinates',
     data: characters
@@ -45,9 +44,8 @@ function handleSaveButtonClick() {
  */
 function handleResetButtonClick() {
   characters = JSON.parse(JSON.stringify(defaultCharacterData));
-  drawCanvas();
+  canvas.drawCanvas();
 
-  const vscode = acquireVsCodeApi();
   vscode.postMessage({
     command: 'resetPositions'
   });
@@ -58,9 +56,8 @@ function handleResetButtonClick() {
  */
 function handleResetShapesButtonClick() {
   shapes = JSON.parse(JSON.stringify(defaultShapesData));
-  drawCanvas();
+  canvas.drawCanvas();
 
-  const vscode = acquireVsCodeApi();
   vscode.postMessage({
     command: 'resetShapes'
   });
@@ -83,10 +80,10 @@ function handleTogglePaletteButtonClick() {
 
   if (isPaletteVisible) {
     palette.classList.remove('hidden');
-    document.getElementById('togglePaletteBtn').textContent = 'Hide Character Palette';
+    document.getElementById('togglePaletteBtn').textContent = 'Hide Characters';
   } else {
     palette.classList.add('hidden');
-    document.getElementById('togglePaletteBtn').textContent = 'Show Character Palette';
+    document.getElementById('togglePaletteBtn').textContent = 'Show Characters';
   }
 }
 
@@ -99,10 +96,10 @@ function handleToggleShapePaletteButtonClick() {
 
   if (isShapePaletteVisible) {
     palette.classList.remove('hidden');
-    document.getElementById('toggleShapePaletteBtn').textContent = 'Hide Shape Palette';
+    document.getElementById('toggleShapePaletteBtn').textContent = 'Hide Shapes';
   } else {
     palette.classList.add('hidden');
-    document.getElementById('toggleShapePaletteBtn').textContent = 'Show Shape Palette';
+    document.getElementById('toggleShapePaletteBtn').textContent = 'Show Shapes';
   }
 }
 
@@ -183,8 +180,8 @@ function deselectAllShapeButtons() {
   selectedShapeType = null;
 }
 
-// Export functions and variables
-module.exports = {
+// Expose functions and variables as global objects
+window.ui = {
   initUI,
   currentMode,
   selectedCharacter,

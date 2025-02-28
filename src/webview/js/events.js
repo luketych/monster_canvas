@@ -2,43 +2,45 @@
  * Event handlers for canvas interactions
  */
 
-// Import canvas functions
-const { isPointInShape, isPointNearResizeHandle, drawCanvas } = require('./canvas');
+// Note: canvas functions and variables are available as global objects
+
+// State variables for event handling
+let events_offsetX = 0;
+let events_offsetY = 0;
 
 /**
  * Handles mouse down events on the canvas
  * @param {MouseEvent} e - The mouse event
  */
 function handleCanvasMouseDown(e) {
-  const rect = canvas.getBoundingClientRect();
+  const rect = canvas.canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
 
   // Check for resize handle
   for (let i = shapes.length - 1; i >= 0; i--) {
-    if (isPointNearResizeHandle(mouseX, mouseY, shapes[i])) {
-      resizingShape = shapes[i];
-      canvas.style.cursor = 'nwse-resize';
+    if (canvas.isPointNearResizeHandle(mouseX, mouseY, shapes[i])) {
+      canvas.resizingShape = shapes[i];
+      canvas.canvas.style.cursor = 'nwse-resize';
       return;
     }
   }
 
   // Add new shape
-  if (currentMode === 'drag' && selectedShapeType) {
+  if (ui.currentMode === 'drag' && ui.selectedShapeType) {
     const newShape = {
       id: nextShapeId++,
-      type: selectedShapeType,
+      type: ui.selectedShapeType,
       x: mouseX - 40,
       y: mouseY - 40,
       width: 80,
       height: 80,
-      color: getRandomColor()
+      color: utils.getRandomColor()
     };
 
     shapes.push(newShape);
-    drawCanvas();
+    canvas.drawCanvas();
 
-    const vscode = acquireVsCodeApi();
     vscode.postMessage({
       command: 'saveShapes',
       data: shapes,
@@ -48,20 +50,19 @@ function handleCanvasMouseDown(e) {
   }
 
   // Add new character
-  if (currentMode === 'drag' && selectedCharacter) {
+  if (ui.currentMode === 'drag' && ui.selectedCharacter) {
     const newChar = {
       id: nextCharacterId++,
-      character: selectedCharacter,
+      character: ui.selectedCharacter,
       x: mouseX,
       y: mouseY,
       size: 50,
-      color: getRandomColor()
+      color: utils.getRandomColor()
     };
 
     characters.push(newChar);
-    drawCanvas();
+    canvas.drawCanvas();
 
-    const vscode = acquireVsCodeApi();
     vscode.postMessage({
       command: 'saveCoordinates',
       data: characters,
@@ -72,15 +73,15 @@ function handleCanvasMouseDown(e) {
 
   // Check for dragging shape
   for (let i = shapes.length - 1; i >= 0; i--) {
-    if (isPointInShape(mouseX, mouseY, shapes[i])) {
-      draggedShape = shapes[i];
-      offsetX = mouseX - draggedShape.x;
-      offsetY = mouseY - draggedShape.y;
+    if (canvas.isPointInShape(mouseX, mouseY, shapes[i])) {
+      canvas.draggedShape = shapes[i];
+      events_offsetX = mouseX - canvas.draggedShape.x;
+      events_offsetY = mouseY - canvas.draggedShape.y;
 
       shapes.splice(i, 1);
-      shapes.push(draggedShape);
+      shapes.push(canvas.draggedShape);
 
-      drawCanvas();
+      canvas.drawCanvas();
       return;
     }
   }
@@ -89,8 +90,8 @@ function handleCanvasMouseDown(e) {
   for (let i = characters.length - 1; i >= 0; i--) {
     const char = characters[i];
 
-    ctx.font = char.size + 'px Arial';
-    const metrics = ctx.measureText(char.character);
+    canvas.ctx.font = char.size + 'px Arial';
+    const metrics = canvas.ctx.measureText(char.character);
     const width = metrics.width;
     const height = char.size;
 
@@ -99,14 +100,14 @@ function handleCanvasMouseDown(e) {
       mouseY >= char.y - height / 2 - 5 &&
       mouseY <= char.y + height / 2 + 5) {
 
-      draggedCharacter = char;
-      offsetX = mouseX - char.x;
-      offsetY = mouseY - char.y;
+      canvas.draggedCharacter = char;
+      events_offsetX = mouseX - char.x;
+      events_offsetY = mouseY - char.y;
 
       characters.splice(i, 1);
-      characters.push(draggedCharacter);
+      characters.push(canvas.draggedCharacter);
 
-      drawCanvas();
+      canvas.drawCanvas();
       return;
     }
   }
@@ -117,58 +118,58 @@ function handleCanvasMouseDown(e) {
  * @param {MouseEvent} e - The mouse event
  */
 function handleCanvasMouseMove(e) {
-  const rect = canvas.getBoundingClientRect();
+  const rect = canvas.canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
 
   // Handle resizing
-  if (resizingShape) {
-    resizingShape.width = Math.max(20, mouseX - resizingShape.x);
-    resizingShape.height = Math.max(20, mouseY - resizingShape.y);
-    drawCanvas();
+  if (canvas.resizingShape) {
+    canvas.resizingShape.width = Math.max(20, mouseX - canvas.resizingShape.x);
+    canvas.resizingShape.height = Math.max(20, mouseY - canvas.resizingShape.y);
+    canvas.drawCanvas();
     return;
   }
 
   // Handle dragging shape
-  if (draggedShape) {
-    draggedShape.x = mouseX - offsetX;
-    draggedShape.y = mouseY - offsetY;
+  if (canvas.draggedShape) {
+    canvas.draggedShape.x = mouseX - events_offsetX;
+    canvas.draggedShape.y = mouseY - events_offsetY;
 
-    draggedShape.x = Math.max(0, Math.min(canvas.width - draggedShape.width, draggedShape.x));
-    draggedShape.y = Math.max(0, Math.min(canvas.height - draggedShape.height, draggedShape.y));
+    canvas.draggedShape.x = Math.max(0, Math.min(canvas.canvas.width - canvas.draggedShape.width, canvas.draggedShape.x));
+    canvas.draggedShape.y = Math.max(0, Math.min(canvas.canvas.height - canvas.draggedShape.height, canvas.draggedShape.y));
 
-    drawCanvas();
+    canvas.drawCanvas();
     return;
   }
 
   // Handle dragging character
-  if (draggedCharacter) {
-    draggedCharacter.x = mouseX - offsetX;
-    draggedCharacter.y = mouseY - offsetY;
+  if (canvas.draggedCharacter) {
+    canvas.draggedCharacter.x = mouseX - events_offsetX;
+    canvas.draggedCharacter.y = mouseY - events_offsetY;
 
-    draggedCharacter.x = Math.max(draggedCharacter.size / 2, Math.min(canvas.width - draggedCharacter.size / 2, draggedCharacter.x));
-    draggedCharacter.y = Math.max(draggedCharacter.size / 2, Math.min(canvas.height - draggedCharacter.size / 2, draggedCharacter.y));
+    canvas.draggedCharacter.x = Math.max(canvas.draggedCharacter.size / 2, Math.min(canvas.canvas.width - canvas.draggedCharacter.size / 2, canvas.draggedCharacter.x));
+    canvas.draggedCharacter.y = Math.max(canvas.draggedCharacter.size / 2, Math.min(canvas.canvas.height - canvas.draggedCharacter.size / 2, canvas.draggedCharacter.y));
 
-    drawCanvas();
+    canvas.drawCanvas();
     return;
   }
 
   // Update cursor
   for (let i = shapes.length - 1; i >= 0; i--) {
-    if (isPointNearResizeHandle(mouseX, mouseY, shapes[i])) {
-      canvas.style.cursor = 'nwse-resize';
+    if (canvas.isPointNearResizeHandle(mouseX, mouseY, shapes[i])) {
+      canvas.canvas.style.cursor = 'nwse-resize';
       return;
     }
-    if (isPointInShape(mouseX, mouseY, shapes[i])) {
-      canvas.style.cursor = 'move';
+    if (canvas.isPointInShape(mouseX, mouseY, shapes[i])) {
+      canvas.canvas.style.cursor = 'move';
       return;
     }
   }
 
   for (let i = characters.length - 1; i >= 0; i--) {
     const char = characters[i];
-    ctx.font = char.size + 'px Arial';
-    const metrics = ctx.measureText(char.character);
+    canvas.ctx.font = char.size + 'px Arial';
+    const metrics = canvas.ctx.measureText(char.character);
     const width = metrics.width;
     const height = char.size;
 
@@ -177,78 +178,75 @@ function handleCanvasMouseMove(e) {
       mouseY >= char.y - height / 2 - 5 &&
       mouseY <= char.y + height / 2 + 5) {
 
-      canvas.style.cursor = 'move';
+      canvas.canvas.style.cursor = 'move';
       return;
     }
   }
 
-  canvas.style.cursor = selectedCharacter || selectedShapeType ? 'cell' : 'default';
+  canvas.canvas.style.cursor = ui.selectedCharacter || ui.selectedShapeType ? 'cell' : 'default';
 }
 
 /**
  * Handles mouse up events on the canvas
  */
 function handleCanvasMouseUp() {
-  if (resizingShape) {
-    const vscode = acquireVsCodeApi();
+  if (canvas.resizingShape) {
     vscode.postMessage({
       command: 'saveShapes',
       data: shapes,
       autoSave: true
     });
-    resizingShape = null;
+    canvas.resizingShape = null;
   }
-  else if (draggedShape) {
-    const vscode = acquireVsCodeApi();
+  else if (canvas.draggedShape) {
     vscode.postMessage({
       command: 'saveShapes',
       data: shapes,
       autoSave: true
     });
-    draggedShape = null;
+    canvas.draggedShape = null;
   }
-  else if (draggedCharacter) {
-    const vscode = acquireVsCodeApi();
+  else if (canvas.draggedCharacter) {
     vscode.postMessage({
       command: 'saveCoordinates',
       data: characters,
       autoSave: true
     });
-    draggedCharacter = null;
+    canvas.draggedCharacter = null;
   }
-  drawCanvas();
+  canvas.drawCanvas();
 }
 
 /**
  * Handles mouse leave events on the canvas
  */
 function handleCanvasMouseLeave() {
-  if (resizingShape || draggedShape) {
-    const vscode = acquireVsCodeApi();
+  if (canvas.resizingShape || canvas.draggedShape) {
     vscode.postMessage({
       command: 'saveShapes',
       data: shapes,
       autoSave: true
     });
-    resizingShape = null;
-    draggedShape = null;
+    canvas.resizingShape = null;
+    canvas.draggedShape = null;
   }
-  else if (draggedCharacter) {
-    const vscode = acquireVsCodeApi();
+  else if (canvas.draggedCharacter) {
     vscode.postMessage({
       command: 'saveCoordinates',
       data: characters,
       autoSave: true
     });
-    draggedCharacter = null;
+    canvas.draggedCharacter = null;
   }
-  drawCanvas();
+  canvas.drawCanvas();
 }
 
-// Export functions
-module.exports = {
+// Expose functions as global objects
+window.events = {
   handleCanvasMouseDown,
   handleCanvasMouseMove,
   handleCanvasMouseUp,
-  handleCanvasMouseLeave
+  handleCanvasMouseLeave,
+  offsetX: events_offsetX,
+  offsetY: events_offsetY
 };

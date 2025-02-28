@@ -1,5 +1,5 @@
 {
-  "name": "monster_canvas",
+  "name": "monster-canvas",
   "displayName": "Monster Canvas",
   "description": "A VS Code extension that displays a canvas where images can be dragged around.",
   "version": "0.0.1",
