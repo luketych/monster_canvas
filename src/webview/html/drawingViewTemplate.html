@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+    {{styles}}
+</head>
+
+<body>
+    <div class="header">
+        <div class="file-name">Select a file to view image</div>
+    </div>
+
+    <div class="image-container">
+        <div class="message" id="message">Select a file or folder from the explorer to view or upload an image</div>
+        <img id="imageElement" style="display: none;" />
+        <div class="image-info" id="imageInfo" style="display: none;"></div>
+    </div>
+
+    <div class="toolbar">
+        <div>
+            <button id="uploadBtn">Upload Image</button>
+            <button id="openInFinderBtn" disabled>Open in Finder</button>
+            <button id="copyPathBtn" disabled>Copy Path</button>
+            <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </div>
+        <div class="view-options">
+            <label><input type="radio" name="viewMode" value="exact" checked> Exact Size</label>
+            <label><input type="radio" name="viewMode" value="fit"> Fit Width</label>
+        </div>
+    </div>
+
+    {{script}}
+</body>
+
+</html>

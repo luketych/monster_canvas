@@ -52,6 +52,18 @@
       {
         "command": "fileDrawer.openFileDetails",
         "title": "File Drawer: Open File Details"
+      },
+      {
+        "command": "workbench.view.extension.file-drawer",
+        "title": "File Drawer: Toggle Sidebar"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "workbench.view.extension.file-drawer",
+        "key": "shift+cmd+y",
+        "mac": "shift+cmd+y",
+        "when": "!sidebarVisible || viewContainerVisible == false"
       }
     ]
   },

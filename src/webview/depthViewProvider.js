@@ -618,7 +618,17 @@ class DepthViewProvider {
   _getHtmlForWebview(webview) {
     // Get the HTML template
     const templatePath = path.join(this.context.extensionPath, 'src', 'webview', 'html', 'depthViewTemplate.html');
+    const stylesUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview', 'styles', 'depthViewStyles.css')));
+    const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview', 'js', 'depthView.js')));
+
+    // Read the HTML template
     let html = fs.readFileSync(templatePath, 'utf8');
+
+    // Replace placeholders with proper file references
+    html = html.replace('{{title}}', 'Depth Viewer');
+    html = html.replace('{{styles}}', `<link rel="stylesheet" href="${stylesUri}">`);
+    html = html.replace('{{script}}', `<script src="${scriptUri}"></script>`);
+
     return html;
   }
 }
