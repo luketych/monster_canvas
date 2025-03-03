@@ -611,14 +611,28 @@ class DepthViewProvider {
   }
 
   /**
-   * Gets the HTML for the webview
-   * @param {vscode.Webview} webview - The webview
-   * @returns {string} - The HTML
+   * Gets the HTML content for the webview
+   * @param {vscode.Webview} webview - The webview to get HTML content for
+   * @returns {string} The HTML content
    */
   _getHtmlForWebview(webview) {
-    // Get the HTML template
+    // Get paths to the template files
     const templatePath = path.join(this.context.extensionPath, 'src', 'webview', 'html', 'depthViewTemplate.html');
+    const stylesPath = path.join(this.context.extensionPath, 'src', 'webview', 'styles', 'depthViewStyles.css');
+    const scriptPath = path.join(this.context.extensionPath, 'src', 'webview', 'js', 'depthView.js');
+
+    // Read the template files
     let html = fs.readFileSync(templatePath, 'utf8');
+    const styles = fs.readFileSync(stylesPath, 'utf8');
+    const script = fs.readFileSync(scriptPath, 'utf8');
+
+    // Replace the title
+    html = html.replace('{{title}}', 'Depth View');
+
+    // Replace styles and script placeholders
+    html = html.replace('{{styles}}', styles);
+    html = html.replace('{{script}}', script);
+
     return html;
   }
 }

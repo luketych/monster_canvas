@@ -1,0 +1,356 @@
+body {
+  margin: 0;
+  padding: 20px;
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+  font-family: var(--vscode-font-family);
+  box-sizing: border-box;
+}
+
+.header {
+  padding: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.file-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.file-path {
+  font-size: 14px;
+  color: var(--vscode-descriptionForeground);
+  margin-bottom: 10px;
+}
+
+.file-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.detail-value {
+  font-size: 14px;
+}
+
+.view-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 5px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.view-button {
+  padding: 5px 10px;
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.view-button.active {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+/* List View */
+.children-container.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.children-container.list-view .child-item {
+  display: grid;
+  grid-template-columns: 30px 1fr 80px 1fr;
+  grid-template-areas: "icon name cover stickers";
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: var(--vscode-editor-background);
+}
+
+/* Icons View */
+.children-container.icons-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 15px;
+  overflow-y: auto;
+  flex: 1;
+  padding: 15px;
+}
+
+.children-container.icons-view .child-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.children-container.icons-view .child-item:hover {
+  border-color: var(--vscode-panel-border);
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.children-container.icons-view .child-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.children-container.icons-view .child-name {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.children-container.icons-view .child-cover,
+.children-container.icons-view .child-stickers {
+  display: none;
+}
+
+/* Columns View */
+.children-container.columns-view {
+  display: flex;
+  overflow-x: auto;
+  flex: 1;
+}
+
+.column {
+  min-width: 250px;
+  max-width: 300px;
+  border-right: 1px solid var(--vscode-panel-border);
+  overflow-y: auto;
+  height: 100%;
+}
+
+.column-header {
+  padding: 8px;
+  font-weight: bold;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background-color: var(--vscode-editor-background);
+  position: sticky;
+  top: 0;
+}
+
+.children-container.columns-view .child-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  cursor: pointer;
+}
+
+.children-container.columns-view .child-icon {
+  margin-right: 8px;
+}
+
+.children-container.columns-view .child-cover,
+.children-container.columns-view .child-stickers {
+  display: none;
+}
+
+/* Gallery View */
+.children-container.gallery-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  overflow-y: auto;
+  flex: 1;
+  padding: 15px;
+}
+
+.children-container.gallery-view .child-item {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.children-container.gallery-view .child-cover {
+  width: 100%;
+  height: 120px;
+  background-color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.children-container.gallery-view .child-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.children-container.gallery-view .child-info {
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.children-container.gallery-view .child-icon {
+  margin-right: 8px;
+}
+
+.children-container.gallery-view .child-stickers {
+  display: none;
+}
+
+/* Accordion behavior */
+.folder-children {
+  margin-left: 20px;
+  border-left: 1px solid var(--vscode-panel-border);
+  padding-left: 10px;
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.3s ease-out;
+}
+
+.folder-children.expanded {
+  max-height: 1000px;
+  /* Arbitrary large value */
+  transition: max-height 0.5s ease-in;
+}
+
+.child-item:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.child-icon {
+  grid-area: icon;
+  font-size: 18px;
+  text-align: center;
+}
+
+.child-name {
+  grid-area: name;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 10px;
+}
+
+.child-cover {
+  grid-area: cover;
+  width: 60px;
+  height: 40px;
+  background-color: #333;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #999;
+  margin: 0 10px;
+  cursor: pointer;
+  position: relative;
+}
+
+.child-cover:hover::after {
+  content: "Click to set cover";
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  background-color: var(--vscode-editor-background);
+  padding: 2px;
+  border-radius: 2px;
+  z-index: 10;
+}
+
+.child-stickers {
+  grid-area: stickers;
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding: 0 5px;
+  min-height: 30px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.child-stickers:empty::after {
+  content: "No stickers. Click to add some.";
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  font-style: italic;
+}
+
+.sticker {
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sticker img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.error-message {
+  color: var(--vscode-errorForeground);
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid var(--vscode-errorForeground);
+  border-radius: 4px;
+}
+
+/* Comments container */
+.comments-container {
+  padding: 10px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.comment {
+  margin-bottom: 15px;
+  padding: 8px;
+  background-color: var(--vscode-editor-inactiveSelectionBackground);
+  border-radius: 4px;
+}
+
+.comment pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: var(--vscode-editor-font-family);
+  font-size: 13px;
+}
