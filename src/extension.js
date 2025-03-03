@@ -41,6 +41,14 @@ function activate(context) {
   // Create the depth viewer provider
   const depthViewProvider = new DepthViewProvider(context);
 
+  // Register the depth viewer webview provider for sidebar mode
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      DepthViewProvider.viewType,
+      depthViewProvider
+    )
+  );
+
   // Register the openDepthView command
   context.subscriptions.push(
     vscode.commands.registerCommand(
@@ -55,6 +63,9 @@ function activate(context) {
   function updateDepthViewLocation() {
     const config = vscode.workspace.getConfiguration('fileDrawer');
     const location = config.get('depthViewLocation', 'editor');
+
+    // Set the context key to control view visibility in sidebar
+    vscode.commands.executeCommand('setContext', 'fileDrawer.depthViewLocation', location);
 
     // Remove existing registrations
     if (depthViewProvider._panel) {
@@ -71,14 +82,8 @@ function activate(context) {
     }
 
     if (location === 'sidebar') {
-      // Register as a webview view in the sidebar
-      const viewProvider = vscode.window.registerWebviewViewProvider(
-        DepthViewProvider.viewType,
-        depthViewProvider
-      );
-      context.subscriptions.push(viewProvider);
-
-      // Show the view
+      // The webview view provider is already registered in the extension
+      // Just show the sidebar
       vscode.commands.executeCommand('workbench.view.extension.file-drawer');
     }
   }

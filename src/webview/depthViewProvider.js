@@ -28,6 +28,21 @@ class DepthViewProvider {
       // If in sidebar mode, just show the view
       if (this._view) {
         this._view.show(true);
+
+        // If we have a fileUri, update the view with the file
+        if (fileUri) {
+          this.currentFileUri = fileUri;
+          this._view.webview.postMessage({
+            command: 'setCurrentFile',
+            fileUri: fileUri.toString(),
+            fileName: path.basename(fileUri.fsPath)
+          });
+
+          // Get file details
+          this._getFileDetails(fileUri.toString());
+        } else {
+          this._showWorkspaceRoot();
+        }
       }
     } else {
       // If in editor mode, show or create the panel
@@ -477,10 +492,18 @@ class DepthViewProvider {
       this._getFileDetails(fileUri);
     } catch (err) {
       console.error('Error opening file:', err);
-      this._panel.webview.postMessage({
-        command: 'error',
-        message: `Error opening file: ${err.message}`
-      });
+
+      // Get the appropriate webview based on the current mode
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
+
+      if (webview) {
+        webview.postMessage({
+          command: 'error',
+          message: `Error opening file: ${err.message}`
+        });
+      }
     }
   }
 
@@ -670,17 +693,31 @@ class DepthViewProvider {
       // Save the data
       fs.writeFileSync(dataFilePath, JSON.stringify(savedData, null, 2));
 
-      // Confirm to the webview
-      this._panel.webview.postMessage({
-        command: 'detailsSaved',
-        fileUri
-      });
+      // Confirm to the webview - using appropriate webview based on mode
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
+
+      if (webview) {
+        webview.postMessage({
+          command: 'detailsSaved',
+          fileUri
+        });
+      }
     } catch (err) {
       console.error('Error saving file details:', err);
-      this._panel.webview.postMessage({
-        command: 'error',
-        message: `Error saving file details: ${err.message}`
-      });
+
+      // Get the appropriate webview based on the current mode
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
+
+      if (webview) {
+        webview.postMessage({
+          command: 'error',
+          message: `Error saving file details: ${err.message}`
+        });
+      }
     }
   }
 
