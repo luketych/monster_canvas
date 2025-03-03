@@ -77,11 +77,37 @@ function drawCharacter(char) {
   ctx.textBaseline = 'middle';
   ctx.fillText(char.character, char.x, char.y);
 
-  // Draw the file/folder name underneath if it exists
-  if (char.metadata && char.metadata.name) {
+  // Draw the file/folder name if this character is being hovered over
+  if (char.isHovered && char.metadata && char.metadata.name) {
     ctx.font = (char.size / 3) + 'px Arial';
     ctx.fillStyle = '#333333';
-    ctx.fillText(char.metadata.name, char.x, char.y + char.size / 2 + 15);
+
+    // Create a background for the tooltip
+    const metrics = ctx.measureText(char.metadata.name);
+    const padding = 5;
+    const tooltipWidth = metrics.width + padding * 2;
+    const tooltipHeight = char.size / 3 + padding * 2;
+
+    // Position the tooltip above the character
+    let tooltipX = char.x - tooltipWidth / 2;
+    let tooltipY = char.y - char.size / 2 - tooltipHeight - 5;
+
+    // Ensure tooltip stays within canvas boundaries
+    tooltipX = Math.max(5, Math.min(canvas.width - tooltipWidth - 5, tooltipX));
+    tooltipY = Math.max(5, tooltipY);
+
+    // Draw tooltip background
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+
+    // Draw tooltip border
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+
+    // Draw tooltip text
+    ctx.fillStyle = '#333333';
+    ctx.fillText(char.metadata.name, tooltipX + tooltipWidth / 2, tooltipY + tooltipHeight / 2 + 2);
   }
 
   if (draggedCharacter === char) {
@@ -154,6 +180,56 @@ function drawResizeHandle(shape) {
   ctx.fill();
   ctx.stroke();
   ctx.restore();
+}
+
+/**
+ * Checks if a point is inside a shape
+ * @param {number} x - The x coordinate
+ * @param {number} y - The y coordinate
+ * @param {Object} shape - The shape to check
+ * @returns {boolean} True if the point is in the shape
+ */
+function isPointInShape(x, y, shape) {
+  switch (shape.type) {
+    case 'circle':
+      const centerX = shape.x + shape.width / 2;
+      const centerY = shape.y + shape.height / 2;
+      const radius = Math.min(shape.width, shape.height) / 2;
+      const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+      return distance <= radius;
+    case 'square':
+      return x >= shape.x && x <= shape.x + shape.width &&
+        y >= shape.y && y <= shape.y + shape.height;
+    case 'triangle':
+      const x1 = shape.x + shape.width / 2;
+      const y1 = shape.y;
+      const x2 = shape.x + shape.width;
+      const y2 = shape.y + shape.height;
+      const x3 = shape.x;
+      const y3 = shape.y + shape.height;
+
+      const denominator = ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3));
+      const a = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / denominator;
+      const b = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / denominator;
+      const c = 1 - a - b;
+
+      return a >= 0 && a <= 1 && b >= 0 && b <= 1 && c >= 0 && c <= 1;
+  }
+  return false;
+}
+
+/**
+ * Checks if a point is near a shape's resize handle
+ * @param {number} x - The x coordinate
+ * @param {number} y - The y coordinate
+ * @param {Object} shape - The shape to check
+ * @returns {boolean} True if the point is near the resize handle
+ */
+function isPointNearResizeHandle(x, y, shape) {
+  const handleX = shape.x + shape.width;
+  const handleY = shape.y + shape.height;
+  const distance = Math.sqrt(Math.pow(x - handleX, 2) + Math.pow(y - handleY, 2));
+  return distance <= 10;
 }
 
 /**

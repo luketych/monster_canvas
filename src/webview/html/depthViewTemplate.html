@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Depth Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--vscode-editor-background);
+      color: var(--vscode-editor-foreground);
+      font-family: var(--vscode-font-family);
+      box-sizing: border-box;
+    }
+
+    .header {
+      padding: 10px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--vscode-panel-border);
+    }
+
+    .file-name {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .file-path {
+      font-size: 14px;
+      color: var(--vscode-descriptionForeground);
+      margin-bottom: 10px;
+    }
+
+    .file-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .detail-label {
+      font-size: 12px;
+      color: var(--vscode-descriptionForeground);
+    }
+
+    .detail-value {
+      font-size: 14px;
+    }
+
+    /* Depth View Specific Styles */
+    .depth-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .depth-item {
+      display: grid;
+      grid-template-columns: 80px 1fr 120px 1fr;
+      grid-template-areas: "type name cover stickers";
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--vscode-panel-border);
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: var(--vscode-editor-background);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .depth-item:hover {
+      background-color: var(--vscode-list-hoverBackground);
+    }
+
+    .depth-type {
+      grid-area: type;
+      font-size: 14px;
+      text-align: center;
+      padding: 4px 8px;
+      background-color: var(--vscode-badge-background);
+      color: var(--vscode-badge-foreground);
+      border-radius: 4px;
+      margin-right: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .depth-name {
+      grid-area: name;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 10px;
+    }
+
+    .depth-cover {
+      grid-area: cover;
+      width: 100px;
+      height: 60px;
+      background-color: #333;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #999;
+      margin: 0 10px;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .depth-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+
+    .depth-cover:hover::after {
+      content: "Click to set cover";
+      position: absolute;
+      bottom: -20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 10px;
+      color: var(--vscode-descriptionForeground);
+      background-color: var(--vscode-editor-background);
+      padding: 2px;
+      border-radius: 2px;
+      z-index: 10;
+    }
+
+    .depth-stickers {
+      grid-area: stickers;
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      padding: 0 5px;
+      min-height: 30px;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .depth-stickers:empty::after {
+      content: "No stickers have been selected.";
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+      font-style: italic;
+    }
+
+    .sticker {
+      width: 24px;
+      height: 24px;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sticker img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 2px;
+    }
+
+    /* Folder children */
+    .folder-children {
+      margin-left: 20px;
+      border-left: 1px solid var(--vscode-panel-border);
+      padding-left: 10px;
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .folder-children.expanded {
+      max-height: 1000px;
+      /* Arbitrary large value */
+      transition: max-height 0.5s ease-in;
+    }
+
+    .error-message {
+      color: var(--vscode-errorForeground);
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid var(--vscode-errorForeground);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="file-name" id="fileName">Loading...</div>
+    <div class="file-path" id="filePath"></div>
+    <div class="file-details" id="fileDetails"></div>
+  </div>
+
+  <div class="depth-container" id="depthContainer"></div>
+
+  <script>
+    (function () {
+      const vscode = acquireVsCodeApi();
+
+      // State
+      let currentFileUri = null;
+      let currentFileDetails = null;
+      let children = [];
+
+      // Elements
+      const fileNameElement = document.getElementById('fileName');
+      const filePathElement = document.getElementById('filePath');
+      const fileDetailsElement = document.getElementById('fileDetails');
+      const depthContainerElement = document.getElementById('depthContainer');
+
+      // Function to format file size
+      function formatFileSize(size) {
+        if (size < 1024) {
+          return size + ' B';
+        } else if (size < 1024 * 1024) {
+          return (size / 1024).toFixed(2) + ' KB';
+        } else if (size < 1024 * 1024 * 1024) {
+          return (size / (1024 * 1024)).toFixed(2) + ' MB';
+        } else {
+          return (size / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+      }
+
+      // Function to format date
+      function formatDate(date) {
+        return new Date(date).toLocaleString();
+      }
+
+      // Function to get file type label
+      function getFileTypeLabel(type) {
+        switch (type) {
+          case 'directory':
+            return 'Folder';
+          case 'javascript':
+            return 'JS';
+          case 'typescript':
+            return 'TS';
+          case 'json':
+            return 'JSON';
+          case 'html':
+            return 'HTML';
+          case 'css':
+            return 'CSS';
+          case 'markdown':
+            return 'MD';
+          case 'python':
+            return 'PY';
+          case 'image':
+            return 'Image';
+          default:
+            return 'File';
+        }
+      }
+
+      // Function to display file details
+      function displayFileDetails(details) {
+        // Update state
+        currentFileDetails = details;
+
+        // Update file name and path
+        fileNameElement.textContent = details.name;
+        filePathElement.textContent = details.path;
+
+        // Update file details
+        fileDetailsElement.innerHTML = '';
+
+        // Type
+        const typeItem = document.createElement('div');
+        typeItem.className = 'detail-item';
+
+        const typeLabel = document.createElement('div');
+        typeLabel.className = 'detail-label';
+        typeLabel.textContent = 'Type';
+        typeItem.appendChild(typeLabel);
+
+        const typeValue = document.createElement('div');
+        typeValue.className = 'detail-value';
+        typeValue.textContent = details.type;
+        typeItem.appendChild(typeValue);
+
+        fileDetailsElement.appendChild(typeItem);
+
+        // Size (if not a directory)
+        if (!details.isDirectory) {
+          const sizeItem = document.createElement('div');
+          sizeItem.className = 'detail-item';
+
+          const sizeLabel = document.createElement('div');
+          sizeLabel.className = 'detail-label';
+          sizeLabel.textContent = 'Size';
+          sizeItem.appendChild(sizeLabel);
+
+          const sizeValue = document.createElement('div');
+          sizeValue.className = 'detail-value';
+          sizeValue.textContent = formatFileSize(details.size);
+          sizeItem.appendChild(sizeValue);
+
+          fileDetailsElement.appendChild(sizeItem);
+        }
+
+        // Created
+        const createdItem = document.createElement('div');
+        createdItem.className = 'detail-item';
+
+        const createdLabel = document.createElement('div');
+        createdLabel.className = 'detail-label';
+        createdLabel.textContent = 'Created';
+        createdItem.appendChild(createdLabel);
+
+        const createdValue = document.createElement('div');
+        createdValue.className = 'detail-value';
+        createdValue.textContent = formatDate(details.created);
+        createdItem.appendChild(createdValue);
+
+        fileDetailsElement.appendChild(createdItem);
+
+        // Modified
+        const modifiedItem = document.createElement('div');
+        modifiedItem.className = 'detail-item';
+
+        const modifiedLabel = document.createElement('div');
+        modifiedLabel.className = 'detail-label';
+        modifiedLabel.textContent = 'Modified';
+        modifiedItem.appendChild(modifiedLabel);
+
+        const modifiedValue = document.createElement('div');
+        modifiedValue.className = 'detail-value';
+        modifiedValue.textContent = formatDate(details.modified);
+        modifiedItem.appendChild(modifiedValue);
+
+        fileDetailsElement.appendChild(modifiedItem);
+      }
+
+      // Function to display children in depth view
+      function displayDepthView(children) {
+        // Clear container
+        depthContainerElement.innerHTML = '';
+
+        // Display each child
+        children.forEach(child => {
+          const childElement = document.createElement('div');
+          childElement.className = 'depth-item';
+          childElement.dataset.uri = child.uri;
+
+          // Type
+          const typeElement = document.createElement('div');
+          typeElement.className = 'depth-type';
+          typeElement.textContent = getFileTypeLabel(child.type);
+          childElement.appendChild(typeElement);
+
+          // Name
+          const nameElement = document.createElement('div');
+          nameElement.className = 'depth-name';
+          nameElement.textContent = child.name;
+          childElement.appendChild(nameElement);
+
+          // Cover
+          const coverElement = document.createElement('div');
+          coverElement.className = 'depth-cover';
+          if (child.coverImage) {
+            const imgElement = document.createElement('img');
+            imgElement.src = child.coverImage;
+            coverElement.appendChild(imgElement);
+          } else {
+            coverElement.textContent = 'No cover';
+          }
+
+          // Add click handler for cover image
+          coverElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Send message to select cover image
+            vscode.postMessage({
+              command: 'selectCoverImage',
+              fileUri: child.uri
+            });
+          });
+
+          childElement.appendChild(coverElement);
+
+          // Stickers
+          const stickersElement = document.createElement('div');
+          stickersElement.className = 'depth-stickers';
+          if (child.stickers && child.stickers.length > 0) {
+            child.stickers.forEach(sticker => {
+              const stickerElement = document.createElement('div');
+              stickerElement.className = 'sticker';
+
+              // If sticker is a path to an image
+              if (typeof sticker === 'string' && (sticker.endsWith('.png') || sticker.endsWith('.jpg') || sticker.endsWith('.jpeg') || sticker.endsWith('.gif'))) {
+                const imgElement = document.createElement('img');
+                imgElement.src = sticker;
+                stickerElement.appendChild(imgElement);
+              } else {
+                stickerElement.textContent = sticker;
+              }
+
+              stickersElement.appendChild(stickerElement);
+            });
+          }
+
+          // Add click handler for stickers
+          stickersElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Send message to select stickers
+            vscode.postMessage({
+              command: 'selectStickers',
+              fileUri: child.uri
+            });
+          });
+
+          childElement.appendChild(stickersElement);
+
+          // Click handler for folders (accordion behavior)
+          if (child.isDirectory) {
+            childElement.addEventListener('click', (e) => {
+              e.stopPropagation();
+
+              // Check if folder children already exist
+              const existingChildren = document.querySelector('.folder-children[data-parent="' + child.uri + '"]');
+
+              if (existingChildren) {
+                // Toggle expanded state
+                existingChildren.classList.toggle('expanded');
+              } else {
+                // Create folder children container
+                const folderChildren = document.createElement('div');
+                folderChildren.className = 'folder-children expanded';
+                folderChildren.dataset.parent = child.uri;
+
+                // Add loading indicator
+                const loadingElement = document.createElement('div');
+                loadingElement.textContent = 'Loading...';
+                folderChildren.appendChild(loadingElement);
+
+                // Insert after the current child
+                childElement.parentNode.insertBefore(folderChildren, childElement.nextSibling);
+
+                // Request children
+                vscode.postMessage({
+                  command: 'getChildren',
+                  fileUri: child.uri
+                });
+              }
+            });
+          } else {
+            // Click handler for files
+            childElement.addEventListener('click', () => {
+              vscode.postMessage({
+                command: 'openFile',
+                fileUri: child.uri
+              });
+            });
+          }
+
+          depthContainerElement.appendChild(childElement);
+        });
+      }
+
+      // Function to show error
+      function showError(message) {
+        const errorElement = document.createElement('div');
+        errorElement.className = 'error-message';
+        errorElement.textContent = message;
+
+        // Add to body
+        document.body.appendChild(errorElement);
+
+        // Remove after 5 seconds
+        setTimeout(() => {
+          errorElement.remove();
+        }, 5000);
+      }
+
+      // Function to show no workspace message
+      function showNoWorkspaceMessage() {
+        // Clear containers
+        fileDetailsElement.innerHTML = '';
+        depthContainerElement.innerHTML = '';
+
+        // Update title
+        fileNameElement.textContent = 'No Workspace Open';
+        filePathElement.textContent = '';
+
+        // Create message
+        const messageElement = document.createElement('div');
+        messageElement.style.textAlign = 'center';
+        messageElement.style.padding = '20px';
+        messageElement.style.marginTop = '50px';
+
+        // Create message paragraph
+        const p1 = document.createElement('p');
+        p1.textContent = 'No workspace is currently open.';
+        messageElement.appendChild(p1);
+
+        const p2 = document.createElement('p');
+        p2.textContent = 'Please open a folder or browse for a file to view details.';
+        messageElement.appendChild(p2);
+
+        // Create browse button
+        const browseButton = document.createElement('button');
+        browseButton.id = 'browseButton';
+        browseButton.textContent = 'Browse...';
+        browseButton.style.marginTop = '20px';
+        browseButton.style.padding = '8px 16px';
+        messageElement.appendChild(browseButton);
+
+        depthContainerElement.appendChild(messageElement);
+
+        // Add click handler to browse button
+        document.getElementById('browseButton').addEventListener('click', () => {
+          vscode.postMessage({
+            command: 'browseWorkspace'
+          });
+        });
+      }
+
+      // Handle messages from the extension
+      window.addEventListener('message', event => {
+        const message = event.data;
+
+        switch (message.command) {
+          case 'setCurrentFile':
+            currentFileUri = message.fileUri;
+            fileNameElement.textContent = message.fileName;
+            break;
+
+          case 'fileDetails':
+            displayFileDetails(message.details);
+            break;
+
+          case 'children':
+            // Check if this is a response to a folder expansion
+            if (message.parentUri && message.parentUri !== currentFileUri) {
+              // Find the folder children container
+              const folderChildren = document.querySelector('.folder-children[data-parent="' + message.parentUri + '"]');
+
+              if (folderChildren) {
+                // Clear loading indicator
+                folderChildren.innerHTML = '';
+
+                // Display children in the folder container
+                message.children.forEach(child => {
+                  const childElement = document.createElement('div');
+                  childElement.className = 'depth-item';
+                  childElement.dataset.uri = child.uri;
+
+                  // Type
+                  const typeElement = document.createElement('div');
+                  typeElement.className = 'depth-type';
+                  typeElement.textContent = getFileTypeLabel(child.type);
+                  childElement.appendChild(typeElement);
+
+                  // Name
+                  const nameElement = document.createElement('div');
+                  nameElement.className = 'depth-name';
+                  nameElement.textContent = child.name;
+                  childElement.appendChild(nameElement);
+
+                  // Cover
+                  const coverElement = document.createElement('div');
+                  coverElement.className = 'depth-cover';
+                  if (child.coverImage) {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = child.coverImage;
+                    coverElement.appendChild(imgElement);
+                  } else {
+                    coverElement.textContent = 'No cover';
+                  }
+
+                  // Add click handler for cover image
+                  coverElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Send message to select cover image
+                    vscode.postMessage({
+                      command: 'selectCoverImage',
+                      fileUri: child.uri
+                    });
+                  });
+
+                  childElement.appendChild(coverElement);
+
+                  // Stickers
+                  const stickersElement = document.createElement('div');
+                  stickersElement.className = 'depth-stickers';
+                  if (child.stickers && child.stickers.length > 0) {
+                    child.stickers.forEach(sticker => {
+                      const stickerElement = document.createElement('div');
+                      stickerElement.className = 'sticker';
+
+                      // If sticker is a path to an image
+                      if (typeof sticker === 'string' && (sticker.endsWith('.png') || sticker.endsWith('.jpg') || sticker.endsWith('.jpeg') || sticker.endsWith('.gif'))) {
+                        const imgElement = document.createElement('img');
+                        imgElement.src = sticker;
+                        stickerElement.appendChild(imgElement);
+                      } else {
+                        stickerElement.textContent = sticker;
+                      }
+
+                      stickersElement.appendChild(stickerElement);
+                    });
+                  }
+
+                  // Add click handler for stickers
+                  stickersElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Send message to select stickers
+                    vscode.postMessage({
+                      command: 'selectStickers',
+                      fileUri: child.uri
+                    });
+                  });
+
+                  childElement.appendChild(stickersElement);
+
+                  // Click handler
+                  if (child.isDirectory) {
+                    childElement.addEventListener('click', (e) => {
+                      e.stopPropagation();
+
+                      // Check if folder children already exist
+                      const existingChildren = document.querySelector('.folder-children[data-parent="' + child.uri + '"]');
+
+                      if (existingChildren) {
+                        // Toggle expanded state
+                        existingChildren.classList.toggle('expanded');
+                      } else {
+                        // Create folder children container
+                        const nestedFolderChildren = document.createElement('div');
+                        nestedFolderChildren.className = 'folder-children expanded';
+                        nestedFolderChildren.dataset.parent = child.uri;
+
+                        // Add loading indicator
+                        const loadingElement = document.createElement('div');
+                        loadingElement.textContent = 'Loading...';
+                        nestedFolderChildren.appendChild(loadingElement);
+
+                        // Insert after the current child
+                        childElement.parentNode.insertBefore(nestedFolderChildren, childElement.nextSibling);
+
+                        // Request children
+                        vscode.postMessage({
+                          command: 'getChildren',
+                          fileUri: child.uri
+                        });
+                      }
+                    });
+                  } else {
+                    childElement.addEventListener('click', (e) => {
+                      e.stopPropagation();
+                      vscode.postMessage({
+                        command: 'openFile',
+                        fileUri: child.uri
+                      });
+                    });
+                  }
+
+                  folderChildren.appendChild(childElement);
+                });
+              }
+            } else {
+              // Display children in the main container
+              children = message.children;
+              displayDepthView(children);
+            }
+            break;
+
+          case 'clearChildren':
+            depthContainerElement.innerHTML = '';
+            break;
+
+          case 'error':
+            showError(message.message);
+            break;
+
+          case 'noWorkspace':
+            showNoWorkspaceMessage();
+            break;
+
+          case 'detailsSaved':
+            // Could show a notification or update UI if needed
+            break;
+        }
+      });
+
+      // Initial request for file details if we have a URI
+      if (currentFileUri) {
+        vscode.postMessage({
+          command: 'getFileDetails',
+          fileUri: currentFileUri
+        });
+      }
+    })();
+  </script>
+</body>
+
+</html>

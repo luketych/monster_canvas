@@ -1,23 +1,57 @@
 {
-  "name": "monster-canvas",
-  "displayName": "Monster Canvas",
-  "description": "A VS Code extension that displays a canvas where images can be dragged around.",
-  "version": "0.0.1",
+  "name": "file-drawer",
+  "displayName": "File Drawer",
+  "description": "Draw on a canvas for each file or folder in your project",
+  "version": "0.1.0",
   "engines": {
-    "vscode": "^1.86.0"
+    "vscode": "^1.60.0"
   },
   "categories": [
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished"
+    "onView:fileDrawer.fileExplorer"
   ],
   "main": "./src/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "file-drawer",
+          "title": "File Drawer",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "file-drawer": [
+        {
+          "id": "fileDrawer.fileExplorer",
+          "name": "Files"
+        },
+        {
+          "id": "fileDrawer.drawingCanvas",
+          "name": "Drawing Canvas",
+          "type": "webview"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "monsterCanvas.openCanvas",
-        "title": "Monster Canvas: Open Canvas"
+        "command": "fileDrawer.openDrawingCanvas",
+        "title": "Open Drawing Canvas"
+      },
+      {
+        "command": "fileDrawer.openFileExplorer",
+        "title": "File Drawer: Open File Explorer"
+      },
+      {
+        "command": "fileDrawer.focusDrawingCanvas",
+        "title": "File Drawer: Focus Drawing Canvas"
+      },
+      {
+        "command": "fileDrawer.openFileDetails",
+        "title": "File Drawer: Open File Details"
       }
     ]
   },
@@ -25,14 +59,17 @@
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "node ./test/runTest.js",
-    "package": "vsce package",
-    "publish": "vsce publish"
+    "watch": "node --watch ./src/extension.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.86.0",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "18.x",
-    "eslint": "^8.56.0",
-    "vsce": "^2.15.0"
+    "@types/vscode": "^1.60.0",
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "14.x",
+    "eslint": "^7.27.0",
+    "glob": "^7.1.7",
+    "mocha": "^8.4.0",
+    "typescript": "^4.3.2",
+    "vscode-test": "^1.5.2"
   }
 }

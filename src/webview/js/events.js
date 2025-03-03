@@ -123,6 +123,11 @@ function handleCanvasMouseMove(e) {
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
 
+  // Reset hover state for all characters
+  characters.forEach(char => {
+    char.isHovered = false;
+  });
+
   // If in carrying mode, update the position of the carried element
   if (isCarryingMode) {
     if (draggedCharacter) {
@@ -210,6 +215,13 @@ function handleCanvasMouseMove(e) {
 
           canvas.style.cursor = 'pointer';
           cursorSet = true;
+
+          // Set hover state for this character
+          char.isHovered = true;
+
+          // Redraw canvas to show the tooltip
+          drawCanvas();
+
           break;
         }
       }
@@ -256,6 +268,11 @@ function handleCanvasMouseUp() {
  * Handles mouse leave events on the canvas
  */
 function handleCanvasMouseLeave() {
+  // Reset hover state for all characters
+  characters.forEach(char => {
+    char.isHovered = false;
+  });
+
   if (resizingShape || draggedShape) {
     vscode.postMessage({
       command: 'saveShapes',
@@ -339,6 +356,11 @@ function handleCanvasClick(e) {
         });
 
         drawCanvas();
+
+        // Update the Canvas Files panel if it's visible
+        if (isCanvasExplorerVisible) {
+          populateCanvasExplorer();
+        }
         return;
       }
     }
@@ -621,6 +643,11 @@ function handleCanvasDrop(e) {
       // Log the final state
       console.log(`DEBUG: Drop operation completed successfully`);
       debugUsedFiles();
+
+      // Update the Canvas Files panel if it's visible
+      if (isCanvasExplorerVisible) {
+        populateCanvasExplorer();
+      }
     }
   } catch (err) {
     console.error('DEBUG: Error in handleCanvasDrop:', err);
@@ -698,6 +725,19 @@ function debugUsedFiles() {
     }
   });
 }
+
+// Export the events functions
+window.events = {
+  handleCanvasMouseDown,
+  handleCanvasMouseMove,
+  handleCanvasMouseUp,
+  handleCanvasMouseLeave,
+  handleCanvasClick,
+  handleKeyDown,
+  handleCanvasDragOver,
+  handleCanvasDrop,
+  debugUsedFiles
+};
 
 /**
  * Updates a file explorer item to show it as used or unused

@@ -1,83 +1,86 @@
-# Monster Canvas VSCode Extension
+# File Drawer
 
-A VS Code extension that displays a canvas where images can be dragged around.
-
-## Development with Dev Containers
-
-This project is configured to use VS Code Dev Containers, which provides a consistent development environment across different machines.
-
-### Prerequisites
-
-To develop this extension using Dev Containers, you need:
-
-1. [Visual Studio Code](https://code.visualstudio.com/)
-2. [Docker](https://www.docker.com/products/docker-desktop)
-3. [VS Code Remote - Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-
-### Getting Started
-
-1. Clone this repository
-2. Open the project in VS Code
-3. When prompted, click "Reopen in Container" or run the "Remote-Containers: Reopen in Container" command from the Command Palette (F1)
-4. VS Code will build the Docker container and open the project inside it
-5. Once the container is running, you can develop, debug, and test the extension as usual
-
-### Running the Extension
-
-To run the extension in development mode:
-
-1. Press F5 or select "Run and Debug" from the Activity Bar
-2. A new VS Code window will open with the extension loaded
-3. Use the "Monster Canvas: Open Canvas" command from the Command Palette to open the canvas
-
-### Adding Additional Extensions
-
-To add more extensions to the development container:
-
-1. Open `.devcontainer/devcontainer.json`
-2. Add the extension ID to the `extensions` array under `customizations.vscode`
-3. Rebuild the container using the "Remote-Containers: Rebuild Container" command
-
-### Running Alongside Other Extensions
-
-The Dev Container setup allows you to run this extension alongside other extensions. To do this:
-
-1. Make sure the extension you want to run alongside Monster Canvas is installed in your local VS Code
-2. Add the extension ID to the `extensions` array in `.devcontainer/devcontainer.json`
-3. Rebuild the container
-4. When you run the extension in debug mode, both extensions will be available in the Extension Development Host
-
-### Customizing the Dev Container
-
-You can customize the Dev Container environment by:
-
-1. Modifying the `Dockerfile` to install additional system dependencies
-2. Updating `docker-compose.yml` to add services or configure environment variables
-3. Editing `.devcontainer/devcontainer.json` to configure VS Code settings and extensions
+File Drawer is a Visual Studio Code extension that allows you to create and save drawings for each file or folder in your project.
 
 ## Features
 
-- Display a canvas with draggable characters and shapes
-- Add new characters from a palette of Unicode characters
-- Add shapes (circles, squares, triangles)
-- Save and reset positions
+- **File Explorer**: A sidebar that displays all files and folders in your workspace
+- **Drawing Canvas**: A canvas where you can draw with a pencil tool
+- **Persistent Drawings**: Drawings are saved and associated with specific files or folders
+- **Drawing Tools**: Change color and brush size, add images, clear canvas, and save drawings
 
-## Structure
+## How to Use
 
-The extension is organized as follows:
+### Using the Command Palette
 
-- `src/extension.js`: Main extension entry point
-- `src/webview/`: Webview-related code
-  - `src/webview/html/`: HTML templates
-  - `src/webview/styles/`: CSS styles
-  - `src/webview/js/`: JavaScript code
-- `src/utils/`: Utility functions and constants
+1. Open the Command Palette (Ctrl+Shift+P or Cmd+Shift+P on Mac)
+2. Type "File Drawer" to see available commands:
+   - `File Drawer: Open File Explorer` - Opens the file explorer view
+   - `File Drawer: Focus Drawing Canvas` - Focuses the drawing canvas view
 
-## Development Tasks
+### Using the Sidebar
 
-The following npm scripts are available:
+1. Click on the File Drawer icon in the Activity Bar (sidebar)
+   - If you don't see the icon, use the command palette to open it
+2. The sidebar will show a file explorer with all files and folders in your workspace
+3. Click on any file or folder to open the drawing canvas
+4. Use the drawing tools to create your drawing:
+   - Select a color using the color picker
+   - Adjust the brush size using the slider
+   - Draw on the canvas with your mouse
+   - Add images by:
+     - Clicking the "Add Image" button and selecting an image file
+     - Dragging and dropping images directly from your computer onto the canvas
+   - Manipulate images:
+     - Drag to position images anywhere on the canvas
+     - Resize images by dragging the resize handle in the bottom-right corner
+   - Navigate the canvas:
+     - Zoom in and out using the zoom controls or mouse wheel
+     - Pan around the canvas by holding the middle mouse button or Alt+left mouse button
+     - Reset the view to the original size and position with the Reset button
+   - Use the Clear button to clear the canvas
+   - Use the Save button to save your drawing
+5. Your drawings are automatically saved and will be loaded when you click on the same file or folder again
 
-- `npm run lint`: Run ESLint to check code quality
-- `npm run test`: Run tests
-- `npm run package`: Package the extension into a VSIX file
-- `npm run publish`: Publish the extension to the VS Code Marketplace
+## Why Use File Drawer?
+
+File Drawer is perfect for:
+
+- Creating visual notes or diagrams related to specific files
+- Sketching ideas or concepts for implementation
+- Marking areas of interest or concern in your codebase
+- Creating visual documentation for your project
+
+## Extension Settings
+
+This extension does not contribute any settings yet.
+
+## Known Issues
+
+- None at this time
+
+## Release Notes
+
+### 0.1.0
+
+- Initial release of File Drawer
+- Basic drawing functionality
+- File explorer integration
+- Persistent storage of drawings
+
+## Development
+
+### Building the Extension
+
+1. Clone the repository
+2. Run `npm install` to install dependencies
+3. Press F5 to open a new window with the extension loaded
+
+### Packaging the Extension
+
+1. Run `vscode:package-extension` command
+2. The packaged extension will be created in the root directory
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

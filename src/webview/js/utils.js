@@ -101,3 +101,11 @@ function getFileIcon(extension) {
       return '📄';
   }
 }
+
+// Export the utility functions
+window.utils = {
+  getRandomColor,
+  isPointInShape,
+  isPointNearResizeHandle,
+  getFileIcon
+};

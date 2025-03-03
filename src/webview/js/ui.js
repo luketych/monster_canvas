@@ -5,6 +5,7 @@
 // UI state
 let isPaletteVisible = true;
 let isShapePaletteVisible = true;
+let isCanvasExplorerVisible = false;
 let selectedCharacter = null;
 let selectedShapeType = null;
 let currentMode = 'drag'; // 'drag' or 'delete'
@@ -22,6 +23,7 @@ function initUI() {
   document.getElementById('togglePaletteBtn').addEventListener('click', handleTogglePaletteButtonClick);
   document.getElementById('toggleShapePaletteBtn').addEventListener('click', handleToggleShapePaletteButtonClick);
   document.getElementById('toggleFileExplorerBtn').addEventListener('click', handleToggleFileExplorerButtonClick);
+  document.getElementById('toggleCanvasExplorerBtn').addEventListener('click', handleToggleCanvasExplorerButtonClick);
 
   // Initialize palettes
   populateCharacterPalette();
@@ -162,6 +164,27 @@ function handleToggleFileExplorerButtonClick() {
 }
 
 /**
+ * Handles toggle canvas explorer button click
+ */
+function handleToggleCanvasExplorerButtonClick() {
+  const canvasExplorer = document.getElementById('canvasExplorer');
+  isCanvasExplorerVisible = !isCanvasExplorerVisible;
+
+  console.log('Toggle canvas explorer:', isCanvasExplorerVisible);
+
+  if (isCanvasExplorerVisible) {
+    canvasExplorer.classList.remove('hidden');
+    document.getElementById('toggleCanvasExplorerBtn').textContent = 'Hide Canvas Files';
+
+    // Populate the canvas explorer with files/folders on the canvas
+    populateCanvasExplorer();
+  } else {
+    canvasExplorer.classList.add('hidden');
+    document.getElementById('toggleCanvasExplorerBtn').textContent = 'Show Canvas Files';
+  }
+}
+
+/**
  * Populates the character palette with Unicode characters
  */
 function populateCharacterPalette() {
@@ -238,3 +261,113 @@ function deselectAllShapeButtons() {
   selectedShapeType = null;
 }
 
+/**
+ * Populates the canvas explorer with files and folders currently on the canvas
+ */
+function populateCanvasExplorer() {
+  const canvasFileTree = document.getElementById('canvasFileTree');
+  canvasFileTree.innerHTML = '';
+
+  console.log('Populating canvas explorer');
+
+  // Get all characters with file/folder metadata
+  const fileCharacters = characters.filter(char => char.metadata && char.metadata.path);
+
+  if (fileCharacters.length > 0) {
+    console.log('Files/folders on canvas:', fileCharacters.length);
+
+    // Group files by type (file or folder)
+    const files = fileCharacters.filter(char => char.metadata.type === 'file');
+    const folders = fileCharacters.filter(char => char.metadata.type === 'folder');
+
+    // Create a document fragment to improve performance
+    const fragment = document.createDocumentFragment();
+
+    // Add folders first
+    if (folders.length > 0) {
+      const foldersSectionTitle = document.createElement('div');
+      foldersSectionTitle.className = 'palette-section-title';
+      foldersSectionTitle.textContent = 'Folders';
+      fragment.appendChild(foldersSectionTitle);
+
+      folders.forEach(folder => {
+        const folderElement = createCanvasFileItem(folder);
+        fragment.appendChild(folderElement);
+      });
+    }
+
+    // Add files
+    if (files.length > 0) {
+      const filesSectionTitle = document.createElement('div');
+      filesSectionTitle.className = 'palette-section-title';
+      filesSectionTitle.textContent = 'Files';
+      fragment.appendChild(filesSectionTitle);
+
+      files.forEach(file => {
+        const fileElement = createCanvasFileItem(file);
+        fragment.appendChild(fileElement);
+      });
+    }
+
+    canvasFileTree.appendChild(fragment);
+  } else {
+    console.log('No files/folders on canvas');
+    canvasFileTree.innerHTML = '<div class="file-tree-item">No files on canvas</div>';
+  }
+}
+
+/**
+ * Creates a file tree item element for the canvas explorer
+ * @param {Object} character - The character object with file/folder metadata
+ * @returns {HTMLElement} The file tree item element
+ */
+function createCanvasFileItem(character) {
+  const itemElement = document.createElement('div');
+  itemElement.className = 'file-tree-item';
+  itemElement.dataset.path = character.metadata.path;
+  itemElement.dataset.type = character.metadata.type;
+
+  // Create a container for the item's content (icon and name)
+  const contentElement = document.createElement('span');
+  contentElement.className = 'file-tree-content';
+
+  // Add icon
+  const iconElement = document.createElement('span');
+  iconElement.className = 'file-tree-icon';
+  if (character.metadata.type === 'folder') {
+    iconElement.className += ' file-tree-folder';
+    iconElement.textContent = '📁';
+  } else {
+    iconElement.className += ' file-tree-file';
+    // Get file extension
+    const extension = character.metadata.path.substring(character.metadata.path.lastIndexOf('.'));
+    iconElement.textContent = getFileIcon(extension);
+  }
+  contentElement.appendChild(iconElement);
+
+  // Add name
+  const nameElement = document.createElement('span');
+  nameElement.className = 'file-tree-name';
+  nameElement.textContent = character.metadata.name;
+  contentElement.appendChild(nameElement);
+
+  // Add click handler to flash the location on the canvas
+  contentElement.addEventListener('click', () => {
+    flashCharacterOnCanvas(character);
+  });
+
+  // Append the content element to the item element
+  itemElement.appendChild(contentElement);
+
+  return itemElement;
+}
+
+// Export the UI functions
+window.ui = {
+  initUI,
+  initSidebar,
+  populateCharacterPalette,
+  populateShapePalette,
+  populateCanvasExplorer,
+  createCanvasFileItem
+};

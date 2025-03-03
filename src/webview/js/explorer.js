@@ -172,3 +172,9 @@ function createFileTreeItem(item) {
 
   return itemElement;
 }
+
+// Export the explorer functions
+window.explorer = {
+  populateFileExplorer,
+  createFileTreeItem
+};
