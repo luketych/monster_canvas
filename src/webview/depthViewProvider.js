@@ -11,6 +11,7 @@ class DepthViewProvider {
   constructor(context) {
     this.context = context;
     this._panel = null;
+    this._view = null;
     this.currentFileUri = null;
     this.imageData = {};
   }
@@ -20,60 +21,47 @@ class DepthViewProvider {
    * @param {vscode.Uri} fileUri - The file or folder URI (optional)
    */
   openDepthView(fileUri) {
-    // If we already have a panel, show it
-    if (this._panel) {
-      this._panel.reveal(vscode.ViewColumn.One);
+    const config = vscode.workspace.getConfiguration('fileDrawer');
+    const location = config.get('depthViewLocation', 'editor');
+
+    if (location === 'sidebar') {
+      // If in sidebar mode, just show the view
+      if (this._view) {
+        this._view.show(true);
+      }
     } else {
-      // Otherwise, create a new panel
-      this._panel = vscode.window.createWebviewPanel(
-        DepthViewProvider.viewType,
-        'Depth Viewer',
-        vscode.ViewColumn.One,
-        {
-          enableScripts: true,
-          retainContextWhenHidden: true,
-          localResourceRoots: [
-            vscode.Uri.file(path.join(this.context.extensionPath, 'media')),
-            vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview')),
-            vscode.Uri.file(path.join(this.context.extensionPath, '..', 'monster-cache'))
-          ]
-        }
-      );
+      // If in editor mode, show or create the panel
+      if (this._panel) {
+        this._panel.reveal(vscode.ViewColumn.One);
+      } else {
+        this._panel = vscode.window.createWebviewPanel(
+          DepthViewProvider.viewType,
+          'Depth Viewer',
+          vscode.ViewColumn.One,
+          {
+            enableScripts: true,
+            retainContextWhenHidden: true,
+            localResourceRoots: [
+              vscode.Uri.file(path.join(this.context.extensionPath, 'media')),
+              vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview')),
+              vscode.Uri.file(path.join(this.context.extensionPath, '..', 'monster-cache'))
+            ]
+          }
+        );
 
-      // Set the HTML content
-      this._panel.webview.html = this._getHtmlForWebview(this._panel.webview);
+        // Set the HTML content
+        this._panel.webview.html = this._getHtmlForWebview(this._panel.webview);
 
-      // Handle messages from the webview
-      this._panel.webview.onDidReceiveMessage(message => {
-        switch (message.command) {
-          case 'getFileDetails':
-            this._getFileDetails(message.fileUri);
-            break;
-          case 'getChildren':
-            this._getChildren(message.fileUri);
-            break;
-          case 'openFile':
-            this._openFile(message.fileUri);
-            break;
-          case 'saveFileDetails':
-            this._saveFileDetails(message.fileUri, message.details);
-            break;
-          case 'browseWorkspace':
-            this._browseWorkspace();
-            break;
-          case 'selectCoverImage':
-            this._selectCoverImage(message.fileUri);
-            break;
-          case 'selectStickers':
-            this._selectStickers(message.fileUri);
-            break;
-        }
-      });
+        // Handle messages from the webview
+        this._panel.webview.onDidReceiveMessage(message => {
+          this._handleMessage(message);
+        });
 
-      // Handle panel close
-      this._panel.onDidDispose(() => {
-        this._panel = null;
-      });
+        // Handle panel close
+        this._panel.onDidDispose(() => {
+          this._panel = null;
+        });
+      }
     }
 
     if (fileUri) {
@@ -81,17 +69,74 @@ class DepthViewProvider {
       this.currentFileUri = fileUri;
 
       // Send the file URI to the webview
-      this._panel.webview.postMessage({
-        command: 'setCurrentFile',
-        fileUri: fileUri.toString(),
-        fileName: path.basename(fileUri.fsPath)
-      });
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
+      if (webview) {
+        webview.postMessage({
+          command: 'setCurrentFile',
+          fileUri: fileUri.toString(),
+          fileName: path.basename(fileUri.fsPath)
+        });
 
-      // Get file details
-      this._getFileDetails(fileUri.toString());
+        // Get file details
+        this._getFileDetails(fileUri.toString());
+      }
     } else {
       // No file URI provided, show workspace root or prompt to open a folder
       this._showWorkspaceRoot();
+    }
+  }
+
+  /**
+   * Resolves the webview view
+   * @param {vscode.WebviewView} webviewView - The webview view
+   */
+  resolveWebviewView(webviewView) {
+    this._view = webviewView;
+
+    webviewView.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [
+        vscode.Uri.file(path.join(this.context.extensionPath, 'media')),
+        vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview')),
+        vscode.Uri.file(path.join(this.context.extensionPath, '..', 'monster-cache'))
+      ]
+    };
+
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+    // Handle messages from the webview
+    webviewView.webview.onDidReceiveMessage(message => {
+      this._handleMessage(message);
+    });
+  }
+
+  /**
+   * Handles messages from the webview
+   * @param {Object} message - The message from the webview
+   */
+  _handleMessage(message) {
+    switch (message.command) {
+      case 'getFileDetails':
+        this._getFileDetails(message.fileUri);
+        break;
+      case 'getChildren':
+        this._getChildren(message.fileUri);
+        break;
+      case 'openFile':
+        this._openFile(message.fileUri);
+        break;
+      case 'saveFileDetails':
+        this._saveFileDetails(message.fileUri, message.details);
+        break;
+      case 'browseWorkspace':
+        this._browseWorkspace();
+        break;
+      case 'selectCoverImage':
+        this._selectCoverImage(message.fileUri);
+        break;
+      case 'selectStickers':
+        this._selectStickers(message.fileUri);
+        break;
     }
   }
 
@@ -106,20 +151,33 @@ class DepthViewProvider {
       const rootUri = workspaceFolders[0].uri;
       this.currentFileUri = rootUri;
 
-      // Send the file URI to the webview
-      this._panel.webview.postMessage({
-        command: 'setCurrentFile',
-        fileUri: rootUri.toString(),
-        fileName: path.basename(rootUri.fsPath)
-      });
+      // Get the appropriate webview based on the current mode
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
 
-      // Get file details
-      this._getFileDetails(rootUri.toString());
+      if (webview) {
+        // Send the file URI to the webview
+        webview.postMessage({
+          command: 'setCurrentFile',
+          fileUri: rootUri.toString(),
+          fileName: path.basename(rootUri.fsPath)
+        });
+
+        // Get file details
+        this._getFileDetails(rootUri.toString());
+      }
     } else {
       // No workspace open, show a message
-      this._panel.webview.postMessage({
-        command: 'noWorkspace'
-      });
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
+
+      if (webview) {
+        webview.postMessage({
+          command: 'noWorkspace'
+        });
+      }
     }
   }
 
@@ -214,27 +272,40 @@ class DepthViewProvider {
         details.coverImage = null;
       }
 
-      // Send the details to the webview
-      this._panel.webview.postMessage({
-        command: 'fileDetails',
-        details
-      });
+      // Get the appropriate webview based on the current mode
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
 
-      // If it's a directory, get its children
-      if (stats.isDirectory()) {
-        this._getChildren(fileUri);
-      } else {
-        // Clear children container for files
-        this._panel.webview.postMessage({
-          command: 'clearChildren'
+      if (webview) {
+        // Send the details to the webview
+        webview.postMessage({
+          command: 'fileDetails',
+          details
         });
+
+        // If it's a directory, get its children
+        if (stats.isDirectory()) {
+          this._getChildren(fileUri);
+        } else {
+          // Clear children container for files
+          webview.postMessage({
+            command: 'clearChildren'
+          });
+        }
       }
     } catch (err) {
       console.error('Error getting file details:', err);
-      this._panel.webview.postMessage({
-        command: 'error',
-        message: `Error getting file details: ${err.message}`
-      });
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
+
+      if (webview) {
+        webview.postMessage({
+          command: 'error',
+          message: `Error getting file details: ${err.message}`
+        });
+      }
     }
   }
 
@@ -363,18 +434,31 @@ class DepthViewProvider {
         return a.name.localeCompare(b.name);
       });
 
-      // Send the children to the webview
-      this._panel.webview.postMessage({
-        command: 'children',
-        children,
-        parentUri: fileUri
-      });
+      // Get the appropriate webview based on the current mode
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
+
+      if (webview) {
+        // Send the children to the webview
+        webview.postMessage({
+          command: 'children',
+          children,
+          parentUri: fileUri
+        });
+      }
     } catch (err) {
       console.error('Error getting children:', err);
-      this._panel.webview.postMessage({
-        command: 'error',
-        message: `Error getting children: ${err.message}`
-      });
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
+
+      if (webview) {
+        webview.postMessage({
+          command: 'error',
+          message: `Error getting children: ${err.message}`
+        });
+      }
     }
   }
 

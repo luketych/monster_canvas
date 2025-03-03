@@ -33,8 +33,32 @@
           "id": "fileDrawer.drawingCanvas",
           "name": "Drawing Canvas",
           "type": "webview"
+        },
+        {
+          "id": "fileDrawer.depthView",
+          "name": "Depth Viewer",
+          "type": "webview",
+          "when": "fileDrawer.depthViewLocation == sidebar"
         }
       ]
+    },
+    "configuration": {
+      "title": "File Drawer",
+      "properties": {
+        "fileDrawer.depthViewLocation": {
+          "type": "string",
+          "enum": [
+            "editor",
+            "sidebar"
+          ],
+          "default": "editor",
+          "description": "Location of the Depth Viewer (editor or sidebar)",
+          "enumDescriptions": [
+            "Show Depth Viewer in the main editor area",
+            "Show Depth Viewer in the File Drawer sidebar"
+          ]
+        }
+      }
     },
     "commands": [
       {
@@ -56,6 +80,10 @@
       {
         "command": "workbench.view.extension.file-drawer",
         "title": "File Drawer: Toggle Sidebar"
+      },
+      {
+        "command": "fileDrawer.openDepthView",
+        "title": "File Drawer: Open Depth View"
       }
     ],
     "keybindings": [
