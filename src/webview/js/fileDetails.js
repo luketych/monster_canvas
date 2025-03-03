@@ -1,6 +1,19 @@
 (function () {
     const vscode = acquireVsCodeApi();
 
+    // Browser-compatible path handling functions
+    function getBasename(filePath) {
+        return filePath.split(/[\\/]/).pop();
+    }
+
+    function getDirname(filePath) {
+        return filePath.split(/[\\/]/).slice(0, -1).join('/');
+    }
+
+    function joinPaths(...paths) {
+        return paths.join('/').replace(/\/+/g, '/');
+    }
+
     // State
     let currentFileUri = null;
     let currentFileDetails = null;
@@ -468,7 +481,7 @@
 
         // Add heading
         const heading = document.createElement('h3');
-        heading.textContent = 'Comments from ' + path.basename(filePath);
+        heading.textContent = 'Comments from ' + getBasename(filePath);
         heading.style.marginBottom = '15px';
         commentsContainer.appendChild(heading);
 

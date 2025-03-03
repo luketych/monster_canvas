@@ -71,6 +71,26 @@ body {
     background-color: var(--vscode-editor-background);
     width: 100%;
     box-sizing: border-box;
+    max-height: var(--depth-item-height, 200px);
+    overflow-x: auto;
+}
+
+.depth-item::-webkit-scrollbar {
+    height: 8px;
+}
+
+.depth-item::-webkit-scrollbar-track {
+    background: var(--vscode-scrollbarSlider-background);
+    border-radius: 4px;
+}
+
+.depth-item::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-hoverBackground);
+    border-radius: 4px;
+}
+
+.depth-item::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-activeBackground);
 }
 
 .depth-item:hover {
@@ -102,90 +122,45 @@ body {
 
 .depth-cover {
     grid-area: cover;
-    width: 100px;
-    height: 60px;
-    background-color: #333;
-    border-radius: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
-    color: #999;
-    margin: 0 10px;
-    cursor: pointer;
-    position: relative;
+    padding: 0 10px;
 }
 
 .depth-cover img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    max-width: 100px;
+    max-height: 100px;
+    object-fit: contain;
     border-radius: 4px;
-}
-
-.depth-cover:hover::after {
-    content: "Click to set cover";
-    position: absolute;
-    bottom: -20px;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 10px;
-    color: var(--vscode-descriptionForeground);
-    background-color: var(--vscode-editor-background);
-    padding: 2px;
-    border-radius: 2px;
-    z-index: 10;
 }
 
 .depth-stickers {
     grid-area: stickers;
     display: flex;
-    gap: 5px;
+    gap: 8px;
+    padding: 0 10px;
     overflow-x: auto;
-    padding: 0 5px;
-    min-height: 30px;
-    align-items: center;
-    cursor: pointer;
+    white-space: nowrap;
 }
 
-.depth-stickers:empty::after {
-    content: "No stickers have been selected.";
-    color: var(--vscode-descriptionForeground);
-    font-size: 11px;
-    font-style: italic;
+.depth-stickers img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    border-radius: 4px;
 }
 
-.sticker {
-    width: 24px;
-    height: 24px;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.sticker img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 2px;
-}
-
-/* Folder children */
 .folder-children {
     margin-left: 20px;
-    border-left: 1px solid var(--vscode-panel-border);
-    padding-left: 10px;
+    display: none;
     overflow: hidden;
-    max-height: 0;
     transition: max-height 0.3s ease-out;
 }
 
 .folder-children.expanded {
+    display: block;
     max-height: 1000px;
-    /* Arbitrary large value */
-    transition: max-height 0.5s ease-in;
 }
 
 .error-message {
@@ -194,4 +169,36 @@ body {
     margin-top: 10px;
     border: 1px solid var(--vscode-errorForeground);
     border-radius: 4px;
+}
+
+.depth-settings {
+    display: flex;
+    gap: 20px;
+    padding: 10px;
+    border-top: 1px solid var(--vscode-panel-border);
+    margin-top: 10px;
+}
+
+.setting-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.setting-group label {
+    font-size: 12px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.setting-group input[type="number"] {
+    width: 80px;
+    padding: 4px;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 4px;
+}
+
+.setting-group input[type="checkbox"] {
+    margin-right: 4px;
 }

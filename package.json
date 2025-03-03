@@ -57,6 +57,23 @@
             "Show Depth Viewer in the main editor area",
             "Show Depth Viewer in the File Drawer sidebar"
           ]
+        },
+        "fileDrawer.depthViewMaxHeight": {
+          "type": "number",
+          "default": 200,
+          "description": "Maximum height of each item in the Depth Viewer (in pixels)",
+          "minimum": 100,
+          "maximum": 500
+        },
+        "fileDrawer.depthViewShowStickers": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show stickers in the Depth Viewer"
+        },
+        "fileDrawer.depthViewShowCover": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show cover images in the Depth Viewer"
         }
       }
     },
@@ -84,6 +101,10 @@
       {
         "command": "fileDrawer.openDepthView",
         "title": "File Drawer: Open Depth View"
+      },
+      {
+        "command": "fileDrawer.setSidebarMode",
+        "title": "File Drawer: Set Depth View to Sidebar Mode"
       }
     ],
     "keybindings": [

@@ -5,6 +5,7 @@ const FileDetailsViewProvider = require('./webview/fileDetailsViewProvider');
 const DepthViewProvider = require('./webview/depthViewProvider');
 const path = require('path');
 const fs = require('fs');
+const setSidebarMode = require('./commands/setSidebarMode').setSidebarMode;
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -141,6 +142,13 @@ function activate(context) {
     }
   );
   context.subscriptions.push(focusImageViewerCommand);
+
+  // Command to set the depth viewer location to sidebar
+  const setSidebarModeCommand = vscode.commands.registerCommand(
+    'fileDrawer.setSidebarMode',
+    setSidebarMode
+  );
+  context.subscriptions.push(setSidebarModeCommand);
 
   // Handle tree view selection changes
   treeView.onDidChangeSelection(event => {

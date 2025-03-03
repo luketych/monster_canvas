@@ -25,24 +25,29 @@ class DepthViewProvider {
     const location = config.get('depthViewLocation', 'editor');
 
     if (location === 'sidebar') {
-      // If in sidebar mode, just show the view
-      if (this._view) {
-        this._view.show(true);
+      // If in sidebar mode, ensure the view is initialized
+      if (!this._view) {
+        vscode.window.showErrorMessage('Depth Viewer is not properly initialized. Please reload the window.');
+        return;
+      }
 
-        // If we have a fileUri, update the view with the file
-        if (fileUri) {
-          this.currentFileUri = fileUri;
-          this._view.webview.postMessage({
-            command: 'setCurrentFile',
-            fileUri: fileUri.toString(),
-            fileName: path.basename(fileUri.fsPath)
-          });
+      // Show the view
+      this._view.show(true);
 
-          // Get file details
-          this._getFileDetails(fileUri.toString());
-        } else {
-          this._showWorkspaceRoot();
-        }
+      // If we have a fileUri, update the view with the file
+      if (fileUri) {
+        this.currentFileUri = fileUri;
+        this._view.webview.postMessage({
+          command: 'setCurrentFile',
+          fileUri: fileUri.toString(),
+          fileName: path.basename(fileUri.fsPath)
+        });
+
+        // Get file details
+        this._getFileDetails(fileUri.toString());
+      } else {
+        // No file URI provided, show workspace root
+        this._showWorkspaceRoot();
       }
     } else {
       // If in editor mode, show or create the panel
@@ -59,7 +64,9 @@ class DepthViewProvider {
             localResourceRoots: [
               vscode.Uri.file(path.join(this.context.extensionPath, 'media')),
               vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview')),
-              vscode.Uri.file(path.join(this.context.extensionPath, '..', 'monster-cache'))
+              vscode.Uri.file(path.join(this.context.extensionPath, '..', 'monster-cache')),
+              // Add workspace folders as trusted resource roots
+              ...(vscode.workspace.workspaceFolders || []).map(folder => folder.uri)
             ]
           }
         );
@@ -77,16 +84,11 @@ class DepthViewProvider {
           this._panel = null;
         });
       }
-    }
 
-    if (fileUri) {
-      // Set the current file URI
-      this.currentFileUri = fileUri;
-
-      // Send the file URI to the webview
-      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
-      if (webview) {
-        webview.postMessage({
+      // If we have a fileUri, update the panel with the file
+      if (fileUri) {
+        this.currentFileUri = fileUri;
+        this._panel.webview.postMessage({
           command: 'setCurrentFile',
           fileUri: fileUri.toString(),
           fileName: path.basename(fileUri.fsPath)
@@ -94,10 +96,10 @@ class DepthViewProvider {
 
         // Get file details
         this._getFileDetails(fileUri.toString());
+      } else {
+        // No file URI provided, show workspace root
+        this._showWorkspaceRoot();
       }
-    } else {
-      // No file URI provided, show workspace root or prompt to open a folder
-      this._showWorkspaceRoot();
     }
   }
 
@@ -106,23 +108,42 @@ class DepthViewProvider {
    * @param {vscode.WebviewView} webviewView - The webview view
    */
   resolveWebviewView(webviewView) {
-    this._view = webviewView;
+    try {
+      this._view = webviewView;
 
-    webviewView.webview.options = {
-      enableScripts: true,
-      localResourceRoots: [
-        vscode.Uri.file(path.join(this.context.extensionPath, 'media')),
-        vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview')),
-        vscode.Uri.file(path.join(this.context.extensionPath, '..', 'monster-cache'))
-      ]
-    };
+      webviewView.webview.options = {
+        enableScripts: true,
+        localResourceRoots: [
+          vscode.Uri.file(path.join(this.context.extensionPath, 'media')),
+          vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview')),
+          vscode.Uri.file(path.join(this.context.extensionPath, '..', 'monster-cache')),
+          // Add workspace folders as trusted resource roots
+          ...(vscode.workspace.workspaceFolders || []).map(folder => folder.uri)
+        ]
+      };
 
-    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+      // Set initial HTML content
+      webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-    // Handle messages from the webview
-    webviewView.webview.onDidReceiveMessage(message => {
-      this._handleMessage(message);
-    });
+      // Handle messages from the webview
+      webviewView.webview.onDidReceiveMessage(message => {
+        this._handleMessage(message);
+      });
+
+      // Handle view visibility changes
+      webviewView.onDidChangeVisibility(() => {
+        if (webviewView.visible) {
+          // When view becomes visible, ensure it's properly initialized
+          this._showWorkspaceRoot();
+        }
+      });
+
+      // Initial setup
+      this._showWorkspaceRoot();
+    } catch (err) {
+      console.error('Error initializing Depth Viewer:', err);
+      vscode.window.showErrorMessage('Failed to initialize Depth Viewer. Please reload the window.');
+    }
   }
 
   /**
@@ -152,6 +173,9 @@ class DepthViewProvider {
       case 'selectStickers':
         this._selectStickers(message.fileUri);
         break;
+      case 'updateSettings':
+        this._updateSettings(message.settings);
+        break;
     }
   }
 
@@ -159,19 +183,24 @@ class DepthViewProvider {
    * Shows the workspace root or prompts to open a folder
    */
   _showWorkspaceRoot() {
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-
-    if (workspaceFolders && workspaceFolders.length > 0) {
-      // Use the first workspace folder
-      const rootUri = workspaceFolders[0].uri;
-      this.currentFileUri = rootUri;
+    try {
+      const workspaceFolders = vscode.workspace.workspaceFolders;
 
       // Get the appropriate webview based on the current mode
       const config = vscode.workspace.getConfiguration('fileDrawer');
       const location = config.get('depthViewLocation', 'editor');
       const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
 
-      if (webview) {
+      if (!webview) {
+        console.error('No webview available');
+        return;
+      }
+
+      if (workspaceFolders && workspaceFolders.length > 0) {
+        // Use the first workspace folder
+        const rootUri = workspaceFolders[0].uri;
+        this.currentFileUri = rootUri;
+
         // Send the file URI to the webview
         webview.postMessage({
           command: 'setCurrentFile',
@@ -181,16 +210,22 @@ class DepthViewProvider {
 
         // Get file details
         this._getFileDetails(rootUri.toString());
-      }
-    } else {
-      // No workspace open, show a message
-      const config = vscode.workspace.getConfiguration('fileDrawer');
-      const location = config.get('depthViewLocation', 'editor');
-      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
 
-      if (webview) {
+        // Get children of the workspace root
+        this._getChildren(rootUri.toString());
+      } else {
+        // No workspace open, show a message
         webview.postMessage({
           command: 'noWorkspace'
+        });
+      }
+    } catch (err) {
+      console.error('Error showing workspace root:', err);
+      const webview = this._view?.webview || this._panel?.webview;
+      if (webview) {
+        webview.postMessage({
+          command: 'error',
+          message: `Error showing workspace root: ${err.message}`
         });
       }
     }
@@ -279,20 +314,31 @@ class DepthViewProvider {
       const fileHash = this._getFileHash(fileUri);
       const savedFileDetails = savedData.files.find(f => f.hash === fileHash);
 
-      if (savedFileDetails) {
-        details.stickers = savedFileDetails.stickers || [];
-        details.coverImage = savedFileDetails.coverImage || null;
-      } else {
-        details.stickers = [];
-        details.coverImage = null;
-      }
-
       // Get the appropriate webview based on the current mode
       const config = vscode.workspace.getConfiguration('fileDrawer');
       const location = config.get('depthViewLocation', 'editor');
       const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
 
       if (webview) {
+        if (savedFileDetails) {
+          // Convert local URIs to webview URIs
+          details.stickers = (savedFileDetails.stickers || []).map(stickerUri => {
+            try {
+              return webview.asWebviewUri(vscode.Uri.parse(stickerUri)).toString();
+            } catch (err) {
+              console.error('Error converting sticker URI:', err);
+              return null;
+            }
+          }).filter(uri => uri !== null);
+
+          details.coverImage = savedFileDetails.coverImage ?
+            webview.asWebviewUri(vscode.Uri.parse(savedFileDetails.coverImage)).toString() :
+            null;
+        } else {
+          details.stickers = [];
+          details.coverImage = null;
+        }
+
         // Send the details to the webview
         webview.postMessage({
           command: 'fileDetails',
@@ -365,6 +411,15 @@ class DepthViewProvider {
       // Get saved details from the data file
       const savedData = this._getSavedFileDetails();
 
+      // Get the appropriate webview based on the current mode
+      const config = vscode.workspace.getConfiguration('fileDrawer');
+      const location = config.get('depthViewLocation', 'editor');
+      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
+
+      if (!webview) {
+        return;
+      }
+
       // Read the directory
       const children = fs.readdirSync(dirPath)
         .map(name => {
@@ -422,8 +477,19 @@ class DepthViewProvider {
             let coverImage = null;
 
             if (savedFileDetails) {
-              stickers = savedFileDetails.stickers || [];
-              coverImage = savedFileDetails.coverImage || null;
+              // Convert local URIs to webview URIs
+              stickers = (savedFileDetails.stickers || []).map(stickerUri => {
+                try {
+                  return webview.asWebviewUri(vscode.Uri.parse(stickerUri)).toString();
+                } catch (err) {
+                  console.error('Error converting sticker URI:', err);
+                  return null;
+                }
+              }).filter(uri => uri !== null);
+
+              coverImage = savedFileDetails.coverImage ?
+                webview.asWebviewUri(vscode.Uri.parse(savedFileDetails.coverImage)).toString() :
+                null;
             }
 
             return {
@@ -449,19 +515,12 @@ class DepthViewProvider {
         return a.name.localeCompare(b.name);
       });
 
-      // Get the appropriate webview based on the current mode
-      const config = vscode.workspace.getConfiguration('fileDrawer');
-      const location = config.get('depthViewLocation', 'editor');
-      const webview = location === 'sidebar' ? this._view?.webview : this._panel?.webview;
-
-      if (webview) {
-        // Send the children to the webview
-        webview.postMessage({
-          command: 'children',
-          children,
-          parentUri: fileUri
-        });
-      }
+      // Send the children to the webview
+      webview.postMessage({
+        command: 'children',
+        children,
+        parentUri: fileUri
+      });
     } catch (err) {
       console.error('Error getting children:', err);
       const config = vscode.workspace.getConfiguration('fileDrawer');
@@ -739,8 +798,20 @@ class DepthViewProvider {
   _getHtmlForWebview(webview) {
     // Get the HTML template
     const templatePath = path.join(this.context.extensionPath, 'src', 'webview', 'html', 'depthViewTemplate.html');
-    const stylesUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview', 'styles', 'depthViewStyles.css')));
-    const scriptUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'src', 'webview', 'js', 'depthView.js')));
+
+    // Choose appropriate CSS file based on view location
+    const config = vscode.workspace.getConfiguration('fileDrawer');
+    const location = config.get('depthViewLocation', 'editor');
+
+    // Use sidebar-specific styles when in sidebar mode
+    const stylesFileName = location === 'sidebar' ? 'depthViewSidebarStyles.css' : 'depthViewStyles.css';
+    const stylesUri = webview.asWebviewUri(vscode.Uri.file(
+      path.join(this.context.extensionPath, 'src', 'webview', 'styles', stylesFileName)
+    ));
+
+    const scriptUri = webview.asWebviewUri(vscode.Uri.file(
+      path.join(this.context.extensionPath, 'src', 'webview', 'js', 'depthView.js')
+    ));
 
     // Read the HTML template
     let html = fs.readFileSync(templatePath, 'utf8');
@@ -750,7 +821,21 @@ class DepthViewProvider {
     html = html.replace('{{styles}}', `<link rel="stylesheet" href="${stylesUri}">`);
     html = html.replace('{{script}}', `<script src="${scriptUri}"></script>`);
 
+    // Add view mode as a data attribute
+    html = html.replace('<body>', `<body data-view-mode="${location}">`);
+
     return html;
+  }
+
+  /**
+   * Updates the settings
+   * @param {Object} settings - The new settings
+   */
+  _updateSettings(settings) {
+    const config = vscode.workspace.getConfiguration('fileDrawer');
+    config.update('depthViewMaxHeight', settings.maxHeight, true);
+    config.update('depthViewShowStickers', settings.showStickers, true);
+    config.update('depthViewShowCover', settings.showCover, true);
   }
 }
 
