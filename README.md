@@ -84,3 +84,7 @@ This extension does not contribute any settings yet.
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+HELLO WORLD
+
+HELLO WORLD AGAIN
